@@ -13,6 +13,14 @@ func ColorOver(under, over color.Color) color.Color {
 	b := uint8((b2 + b1*(0xffff-a2)/0xffff) / 257)
 	a := uint8((a2 + a1*(0xffff-a2)/0xffff) / 257)
 	result := color.RGBA{r, g, b, a}
-	// fmt.Println(under, r1, g1, b1, a1, over, r2, g2, b2, a2, result, r/255, g/255, b/255, a/255)
+	return result
+}
+
+func ColorOverUint8(under, over color.RGBA) color.RGBA {
+	r := (over.R + uint8(uint16(under.R)*uint16(0xff-over.A)/0xff))
+	g := (over.G + uint8(uint16(under.G)*uint16(0xff-over.A)/0xff))
+	b := (over.B + uint8(uint16(under.B)*uint16(0xff-over.A)/0xff))
+	a := (over.A + uint8(uint16(under.A)*uint16(0xff-over.A)/0xff))
+	result := color.RGBA{r, g, b, a}
 	return result
 }
