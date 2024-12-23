@@ -29,34 +29,30 @@ func main() {
 
 	pins := stringer.CalculatePins(pinCount, bounds, paddingPixel)
 	// fmt.Println(pins)
-	stringer.CalculateLines(pins)
+	allLines := stringer.CalculateLines(pins)
 
 	currentPin := 0
 	for range 5000 {
-		p := pins[currentPin]
 		bestScore := math.Inf(-1)
-		bestPin := 0
-		for i, q := range pins {
-			if i == currentPin {
+		var bestPoints []image.Point
+		var bestPin = -1
+		for i, linePoints := range allLines[currentPin] {
+			if linePoints == nil {
 				continue
 			}
-			linePoints := stringer.LinePoints(p, q)
 			score := stringer.Score(linePoints, targetImage, resultImage)
 			if score > bestScore {
 				bestScore = score
+				bestPoints = linePoints
 				bestPin = i
 			}
 		}
 		if rand.Float64() > 0.990 {
-			bestPin = rand.Intn(len(pins) - 1)
-			if bestPin == currentPin {
-				bestPin = len(pins) - 1
-			}
+			bestPoints = allLines[currentPin][rand.Intn(len(allLines[currentPin])-1)]
 		}
 
-		pixels := stringer.LinePoints(p, pins[bestPin])
-		stringer.PixelOver(resultImage, pixels, color.RGBA{0, 0, 0, 20})
-		stringer.PixelOver(targetImage, pixels, color.RGBA{20, 20, 20, 20})
+		stringer.PixelOver(resultImage, bestPoints, color.RGBA{0, 0, 0, 20})
+		stringer.PixelOver(targetImage, bestPoints, color.RGBA{20, 20, 20, 20})
 
 		// fmt.Printf("going from %d to %d\n", currentPin, bestPin)
 		currentPin = bestPin
