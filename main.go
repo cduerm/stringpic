@@ -7,7 +7,6 @@ import (
 	"image/draw"
 	"math"
 	"math/rand"
-	"os"
 
 	"github.com/cduerm/stringpic/stringer"
 )
@@ -33,16 +32,12 @@ func main() {
 	stringer.CalculateLines(pins)
 
 	currentPin := 0
-	gone := make(map[string]struct{})
 	for range 5000 {
 		p := pins[currentPin]
 		bestScore := math.Inf(-1)
 		bestPin := 0
 		for i, q := range pins {
-			path := fmt.Sprintf("%d,%d", currentPin, i)
-			_, inGone := gone[path]
-			// inGone = false
-			if i == currentPin || inGone {
+			if i == currentPin {
 				continue
 			}
 			linePoints := stringer.LinePoints(p, q)
@@ -64,7 +59,6 @@ func main() {
 		stringer.PixelOver(targetImage, pixels, color.RGBA{20, 20, 20, 20})
 
 		// fmt.Printf("going from %d to %d\n", currentPin, bestPin)
-		gone[fmt.Sprintf("%d,%d", currentPin, bestPin)] = struct{}{}
 		currentPin = bestPin
 	}
 
@@ -76,13 +70,4 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func test() {
-	for i := range 256 {
-		c := color.RGBA{uint8(i), uint8(i), uint8(i), uint8(i)}
-		r, _, _, _ := c.RGBA()
-		fmt.Printf("%d: %d (factor: %5.3f)\n", i, r, float64(r)/float64(i))
-	}
-	os.Exit(1)
 }
