@@ -9,8 +9,9 @@ func LinePoints(from, to Pin) []image.Point {
 	end := image.Point{int(to.X), int(to.Y)}
 	dx := end.Sub(start).X
 	dy := end.Sub(start).Y
+	n := max(abs(dx), abs(dy))
 
-	points := make([]image.Point, 0)
+	points := make([]image.Point, 0, n+1)
 	if abs(dx) >= abs(dy) {
 		d := dx / abs(dx)
 		for i := range abs(dx) + 1 {
