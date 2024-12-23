@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"math/rand"
 )
 
 type Pin struct {
@@ -18,8 +19,9 @@ func CalculatePins(n int, bounds image.Rectangle, padding int) []Pin {
 	pins := make([]Pin, n)
 	step := 2 * math.Pi / float64(n)
 	for i := range n {
-		x := centerX + radius*math.Sin(float64(i)*step)
-		y := centerY + radius*math.Cos(float64(i)*step)
+		r := 2 * (rand.Float64() - 0.5) * step * 0.2
+		x := centerX + radius*math.Sin(float64(i)*step+r)
+		y := centerY + radius*math.Cos(float64(i)*step+r)
 		pins[i] = Pin{x, y}
 	}
 	return pins
@@ -27,5 +29,22 @@ func CalculatePins(n int, bounds image.Rectangle, padding int) []Pin {
 
 func (p Pin) Draw(img draw.Image) {
 	col := color.RGBA{255, 0, 0, 255}
-	Disk(img, p, 3, col)
+	Disk(img, p, 2, col)
+}
+
+func CalculateLines(pins []Pin) [][][]image.Point {
+	n := len(pins)
+	lines := make([][][]image.Point, n)
+	for i, p := range pins {
+		lines[i] = make([][]image.Point, 0, n)
+		for j, q := range pins {
+			s, b := min(i, j), max(i, j)
+			diff := min(b-s, n+s-b)
+			if diff < n/10 {
+				continue
+			}
+			lines[i] = append(lines[i], LinePoints(p, q))
+		}
+	}
+	return lines
 }
