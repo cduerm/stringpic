@@ -53,3 +53,24 @@ func Circle(dst draw.Image, center Pin, radius float64, thickness float64, col c
 		}
 	}
 }
+
+func PixelOver(dst draw.Image, pixels []image.Point, cOver color.RGBA) {
+	var pix []uint8
+	var img *image.RGBA
+	if i, ok := dst.(*image.RGBA); !ok {
+		panic("can only use image.RGBA image")
+	} else {
+		img = i
+		pix = img.Pix
+	}
+	for _, p := range pixels {
+		idx := img.PixOffset(p.X, p.Y)
+		cUnder := color.RGBA{pix[idx+0], pix[idx+1], pix[idx+2], pix[idx+3]}
+		c := ColorOverUint8(cUnder, cOver)
+		// fmt.Println(cUnder, cOver, c)
+		pix[idx+0] = c.R
+		pix[idx+1] = c.G
+		pix[idx+2] = c.B
+		pix[idx+3] = c.A
+	}
+}
