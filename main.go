@@ -12,27 +12,28 @@ import (
 )
 
 var filename = "flower512-contrast.png"
-var pinCount = 240
-var paddingPixel = 10
+
+const pinCount = 240
+const paddingPixel = 2
+const outputSize = 1000
+const nLines = 5000
+
+var stringDarkness = max(1, min(255, 20*(float64(outputSize)/400)*(2500/float64(nLines))))
 
 func main() {
-	diskImage, err := stringer.OpenImageFromDisk(filename)
+	targetImage, resultImage, err := getImages(outputSize, filename)
 	if err != nil {
 		panic(err)
 	}
-	bounds := diskImage.Bounds()
-	targetImage := image.NewRGBA(bounds)
-	draw.Draw(targetImage, bounds, diskImage, image.Point{}, draw.Src)
-	fmt.Println(bounds)
-	resultImage := image.NewRGBA(targetImage.Bounds())
-	draw.Draw(resultImage, resultImage.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Over)
+	fmt.Println(targetImage.Bounds(), resultImage.Bounds())
+	stringer.SaveImageToDisk("target_rescaled.png", targetImage)
 
-	pins := stringer.CalculatePins(pinCount, bounds, paddingPixel)
+	pins := stringer.CalculatePins(pinCount, resultImage.Bounds(), paddingPixel)
 	// fmt.Println(pins)
 	allLines := stringer.CalculateLines(pins)
 
 	currentPin := 0
-	for range 2500 {
+	for range nLines {
 		bestScore := math.Inf(-1)
 		var bestPoints []image.Point
 		var bestPin = -1
@@ -51,19 +52,37 @@ func main() {
 			bestPoints = allLines[currentPin][rand.Intn(len(allLines[currentPin])-1)]
 		}
 
-		stringer.PixelOver(resultImage, bestPoints, color.RGBA{0, 0, 0, 30})
-		stringer.PixelOver(targetImage, bestPoints, color.RGBA{30, 30, 30, 30})
+		stringer.PixelOver(resultImage, bestPoints, color.RGBA{0, 0, 0, uint8(stringDarkness)})
+		stringer.PixelOver(targetImage, bestPoints, color.RGBA{uint8(stringDarkness), uint8(stringDarkness), uint8(stringDarkness), uint8(stringDarkness)})
 
 		// fmt.Printf("going from %d to %d\n", currentPin, bestPin)
 		currentPin = bestPin
 	}
 
-	for _, p := range pins {
-		p.Draw(resultImage)
-	}
+	// for _, p := range pins {
+	// 	p.Draw(resultImage)
+	// }
 
 	err = stringer.SaveImageToDisk("out.png", resultImage)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func getImages(size int, filename string) (targetImage, resultImage *image.RGBA, err error) {
+	diskImage, err := stringer.OpenImageFromDisk(filename)
+	if err != nil {
+		return nil, nil, err
+	}
+	// bounds := diskImage.Bounds()
+
+	targetImage = stringer.RescaleImage(diskImage, size)
+
+	// targetImage = image.NewRGBA(bounds)
+	// draw.Draw(targetImage, bounds, diskImage, image.Point{}, draw.Src)
+
+	resultImage = image.NewRGBA(targetImage.Bounds())
+	draw.Draw(resultImage, resultImage.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Over)
+
+	return targetImage, resultImage, nil
 }
