@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -13,10 +12,10 @@ import (
 
 var filename = "flower512-contrast.png"
 
-const pinCount = 240
+const pinCount = 300
 const paddingPixel = 2
-const outputSize = 1000
-const nLines = 5000
+const outputSize = 512
+const nLines = 4000
 
 var stringDarkness = max(1, min(255, 20*(float64(outputSize)/400)*(2500/float64(nLines))))
 
@@ -25,8 +24,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(targetImage.Bounds(), resultImage.Bounds())
-	stringer.SaveImageToDisk("target_rescaled.png", targetImage)
 
 	pins := stringer.CalculatePins(pinCount, resultImage.Bounds(), paddingPixel)
 	// fmt.Println(pins)
