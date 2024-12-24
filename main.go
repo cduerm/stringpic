@@ -1,23 +1,34 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"math"
-	"math/rand"
+	"os"
+	"strings"
 
 	"github.com/cduerm/stringpic/stringer"
 )
 
 var filename = "flower512-contrast.png"
 
-const pinCount = 300
-const paddingPixel = 2
-const outputSize = 512
-const nLines = 4000
+var pinCount = 300
+var paddingPixel = 0
+var outputSize = 512
+var nLines = 4000
 
 var stringDarkness = max(1, min(255, 20*(float64(outputSize)/400)*(2500/float64(nLines))))
+
+func init() {
+	flag.StringVar(&filename, "filename", filename, "png file to convert to string art")
+	flag.IntVar(&pinCount, "pinCount", pinCount, "number of pins in circular pattern")
+	flag.IntVar(&outputSize, "size", outputSize, "size of output image")
+	flag.IntVar(&nLines, "nLines", nLines, "number of lines")
+	flag.Parse()
+}
 
 func main() {
 	targetImage, resultImage, err := getImages(outputSize, filename)
@@ -26,11 +37,13 @@ func main() {
 	}
 
 	pins := stringer.CalculatePins(pinCount, resultImage.Bounds(), paddingPixel)
-	// fmt.Println(pins)
 	allLines := stringer.CalculateLines(pins)
 
+	var instructions = new(strings.Builder)
+	var length = 0.0
+	fmt.Fprintln(instructions, "start at pin 1, bottom center, counting counterclockwise")
 	currentPin := 0
-	for range nLines {
+	for i := range nLines {
 		bestScore := math.Inf(-1)
 		var bestPoints []image.Point
 		var bestPin = -1
@@ -45,20 +58,20 @@ func main() {
 				bestPin = i
 			}
 		}
-		if rand.Float64() > 0.990 {
-			bestPoints = allLines[currentPin][rand.Intn(len(allLines[currentPin])-1)]
-		}
 
 		stringer.PixelOver(resultImage, bestPoints, color.RGBA{0, 0, 0, uint8(stringDarkness)})
 		stringer.PixelOver(targetImage, bestPoints, color.RGBA{uint8(stringDarkness), uint8(stringDarkness), uint8(stringDarkness), uint8(stringDarkness)})
 
-		// fmt.Printf("going from %d to %d\n", currentPin, bestPin)
+		fmt.Fprintf(instructions, "line % 4d: next Pin is % 3d\n", i+1, bestPin+1)
+		length += 1
+
 		currentPin = bestPin
 	}
 
-	// for _, p := range pins {
-	// 	p.Draw(resultImage)
-	// }
+	err = os.WriteFile("instructions.txt", []byte(instructions.String()), os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
 
 	err = stringer.SaveImageToDisk("out.png", resultImage)
 	if err != nil {
@@ -71,12 +84,8 @@ func getImages(size int, filename string) (targetImage, resultImage *image.RGBA,
 	if err != nil {
 		return nil, nil, err
 	}
-	// bounds := diskImage.Bounds()
 
 	targetImage = stringer.RescaleImage(diskImage, size)
-
-	// targetImage = image.NewRGBA(bounds)
-	// draw.Draw(targetImage, bounds, diskImage, image.Point{}, draw.Src)
 
 	resultImage = image.NewRGBA(targetImage.Bounds())
 	draw.Draw(resultImage, resultImage.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Over)
