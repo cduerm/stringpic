@@ -139,3 +139,35 @@ func TestPaintLine(t *testing.T) {
 		}
 	}
 }
+
+func TestScores(t *testing.T) {
+	for range 1000 {
+		pts := LinePoints(
+			Pin{rand.Float64() * 512, rand.Float64() * 512},
+			Pin{rand.Float64() * 512, rand.Float64() * 512})
+
+		bounds := image.Rect(0, 0, 512, 512)
+
+		target := image.NewRGBA(bounds)
+		for i := range 512 {
+			for j := range 512 {
+				target.Pix[target.PixOffset(i, j)+0] = uint8(rand.Int())
+				target.Pix[target.PixOffset(i, j)+1] = uint8(rand.Int())
+				target.Pix[target.PixOffset(i, j)+2] = uint8(rand.Int())
+				target.Pix[target.PixOffset(i, j)+3] = uint8(255)
+			}
+		}
+
+		result := image.NewRGBA(bounds)
+		draw.Draw(result, result.Bounds(), image.White, image.Point{}, draw.Over)
+		// PixelOver(target, pts, color.RGBA{0, 0, 0, 255})
+		// SaveImageToDisk("testScoresResult.png", result)
+		// SaveImageToDisk("testScoresTarget.png", target)
+
+		s1 := Score(pts, target, result)
+		s2 := Score_old(pts, target, result)
+		if s1 != s2 {
+			t.Fail()
+		}
+	}
+}
