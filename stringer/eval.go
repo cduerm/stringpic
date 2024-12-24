@@ -30,12 +30,23 @@ func LinePoints(from, to Pin) []image.Point {
 	return points
 }
 
-func Score(points []image.Point, target, result image.Image) float64 {
+func Score(points []image.Point, target, result *image.RGBA) float64 {
+	var score float64 = 0
+	for _, p := range points {
+		rTarget := target.Pix[target.PixOffset(p.X, p.Y)]
+		rResult := result.Pix[result.PixOffset(p.X, p.Y)]
+		val := (float64(rResult) - float64(rTarget)) / 255
+		score += -val * val
+	}
+	return score / float64(len(points))
+}
+
+func Score_old(points []image.Point, target, result *image.RGBA) float64 {
 	var score float64 = 0
 	for _, p := range points {
 		rTarget, _, _, _ := target.At(p.X, p.Y).RGBA()
 		rResult, _, _, _ := result.At(p.X, p.Y).RGBA()
-		val := float64(rResult-rTarget) / (257 * 255)
+		val := (float64(rResult) - float64(rTarget)) / (257 * 255)
 		score += -val * val
 	}
 	return score / float64(len(points))
