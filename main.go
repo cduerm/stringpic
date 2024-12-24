@@ -41,7 +41,7 @@ func main() {
 
 	var instructions = new(strings.Builder)
 	var length = 0.0
-	fmt.Fprintln(instructions, "start at pin 1, bottom center, counting counterclockwise")
+	fmt.Fprintln(instructions, "start at pin 1, top center, counting clockwise")
 	currentPin := 0
 	for i := range nLines {
 		bestScore := math.Inf(-1)

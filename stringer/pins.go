@@ -21,7 +21,7 @@ func CalculatePins(n int, bounds image.Rectangle, padding int) []Pin {
 	for i := range n {
 		r := 2 * (rand.Float64() - 0.5) * step * 0.2
 		x := centerX + radius*math.Sin(float64(i)*step+r)
-		y := centerY + radius*math.Cos(float64(i)*step+r)
+		y := centerY - radius*math.Cos(float64(i)*step+r)
 		pins[i] = Pin{x, y}
 	}
 	return pins
