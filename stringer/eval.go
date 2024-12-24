@@ -41,17 +41,6 @@ func Score(points []image.Point, target, result *image.RGBA) float64 {
 	return score / float64(len(points))
 }
 
-func Score_old(points []image.Point, target, result *image.RGBA) float64 {
-	var score float64 = 0
-	for _, p := range points {
-		rTarget, _, _, _ := target.At(p.X, p.Y).RGBA()
-		rResult, _, _, _ := result.At(p.X, p.Y).RGBA()
-		val := (float64(rResult) - float64(rTarget)) / (257 * 255)
-		score += -val * val
-	}
-	return score / float64(len(points))
-}
-
 func abs(a int) int {
 	if a > 0 {
 		return a
