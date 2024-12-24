@@ -12,7 +12,7 @@ import (
 )
 
 var filename = "flower512-contrast.png"
-var pinCount = 300
+var pinCount = 240
 var paddingPixel = 10
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 	allLines := stringer.CalculateLines(pins)
 
 	currentPin := 0
-	for range 5000 {
+	for range 2500 {
 		bestScore := math.Inf(-1)
 		var bestPoints []image.Point
 		var bestPin = -1
@@ -51,8 +51,8 @@ func main() {
 			bestPoints = allLines[currentPin][rand.Intn(len(allLines[currentPin])-1)]
 		}
 
-		stringer.PixelOver(resultImage, bestPoints, color.RGBA{0, 0, 0, 20})
-		stringer.PixelOver(targetImage, bestPoints, color.RGBA{20, 20, 20, 20})
+		stringer.PixelOver(resultImage, bestPoints, color.RGBA{0, 0, 0, 30})
+		stringer.PixelOver(targetImage, bestPoints, color.RGBA{30, 30, 30, 30})
 
 		// fmt.Printf("going from %d to %d\n", currentPin, bestPin)
 		currentPin = bestPin

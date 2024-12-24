@@ -36,7 +36,7 @@ func Score(points []image.Point, target, result *image.RGBA) float64 {
 		rTarget := target.Pix[target.PixOffset(p.X, p.Y)]
 		rResult := result.Pix[result.PixOffset(p.X, p.Y)]
 		val := (float64(rResult) - float64(rTarget)) / 255
-		score += -val * val
+		score += val
 	}
 	return score / float64(len(points))
 }
