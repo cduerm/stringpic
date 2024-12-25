@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/cduerm/stringpic/htmlViewer"
 	"github.com/cduerm/stringpic/stringer"
 )
 
@@ -47,6 +48,11 @@ func main() {
 	}
 
 	err = stringer.SaveImageToDisk(path.Join(outDir, outFilenameBase+"_stringer.png"), resultImage)
+	if err != nil {
+		panic(err)
+	}
+
+	err = htmlViewer.WriteInstructions(path.Join(outDir, outFilenameBase+"_instructions.html"), instructions)
 	if err != nil {
 		panic(err)
 	}
