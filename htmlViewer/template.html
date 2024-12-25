@@ -12,12 +12,14 @@ body {
   position: fixed;
   width: 100%;
   z-index: 10;
+  zoom: 200%;
 }
 .mdl-layout__content {
   padding-top: 64px;
 }
 #content {
-  width: 50%;
+  zoom: 250%;
+  width: 60%;
   margin: 20px auto;
   line-height: 1.5em;
 }
@@ -37,10 +39,10 @@ body {
       <span class="mdl-layout-title">Auto-Scrolling Text</span>
       <div class="mdl-layout-spacer"></div>
       <button id="slower" class="mdl-button mdl-js-button mdl-button--icon">
-        <i class="material-icons">+</i>
+        <i class="material-icons">-</i>
       </button>
       <button id="faster" class="mdl-button mdl-js-button mdl-button--icon">
-        <i class="material-icons">-</i>
+        <i class="material-icons">+</i>
       </button>
       <button id="pause" class="mdl-button mdl-js-button mdl-button--icon">
         <i class="material-icons" id="play_pause">pause</i>
