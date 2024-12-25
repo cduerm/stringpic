@@ -2,9 +2,6 @@ package main
 
 import (
 	"flag"
-	"image"
-	"image/color"
-	"image/draw"
 	"path"
 	"strings"
 
@@ -33,7 +30,7 @@ func init() {
 }
 
 func main() {
-	targetImage, resultImage, err := getImages(outputSize, filename)
+	targetImage, resultImage, err := stringer.GetImages(outputSize, filename)
 	if err != nil {
 		panic(err)
 	}
@@ -53,18 +50,4 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func getImages(size int, filename string) (targetImage, resultImage *image.RGBA, err error) {
-	diskImage, err := stringer.OpenImageFromDisk(filename)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	targetImage = stringer.RescaleImage(diskImage, size)
-
-	resultImage = image.NewRGBA(targetImage.Bounds())
-	draw.Draw(resultImage, resultImage.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Over)
-
-	return targetImage, resultImage, nil
 }

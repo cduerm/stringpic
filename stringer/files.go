@@ -3,6 +3,8 @@ package stringer
 import (
 	"fmt"
 	"image"
+	"image/color"
+	"image/draw"
 	"image/png"
 	"os"
 
@@ -51,4 +53,18 @@ func WriteInstructionsToDisk(filename string, instructions []int, length float64
 	fmt.Fprintf(file, "Your're done. Congratulations!\n")
 
 	return nil
+}
+
+func GetImages(size int, filename string) (targetImage, resultImage *image.RGBA, err error) {
+	diskImage, err := OpenImageFromDisk(filename)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	targetImage = RescaleImage(diskImage, size)
+
+	resultImage = image.NewRGBA(targetImage.Bounds())
+	draw.Draw(resultImage, resultImage.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Over)
+
+	return targetImage, resultImage, nil
 }
