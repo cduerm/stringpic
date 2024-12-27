@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
 
 	"fyne.io/fyne/v2"
@@ -10,51 +11,91 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/storage"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/cduerm/stringpic/stringer"
 )
 
+var completed = binding.NewFloat()
 var nLines = binding.NewFloat()
 var nLinesSlider *widget.Slider
+var lineDarkness = binding.NewFloat()
+var lineDarknessSlider *widget.Slider
+var size = binding.NewFloat()
+var sizeSlider *widget.Slider
 
 var targetImage, resultImage *image.RGBA
 var targetImages, resultImages []*image.RGBA
-var completed float64 = 0
+
+var leftImage, rightImage *canvas.Image
+
 var nLinesValues []int
+var imgSize int = 600
+var targetFilename string
+
+var myApp = app.New()
+var myWindow = myApp.NewWindow("Stringer by cduerm")
+var fileOpenDialog = dialog.NewFileOpen(updateImage, myWindow)
 
 func main() {
-	myApp := app.New()
-	myWindow := myApp.NewWindow("Stringer by cduerm")
+	if root, err := storage.ListerForURI(storage.NewFileURI("./input")); err == nil {
+		fileOpenDialog.SetLocation(root)
+	}
 
-	leftImage, rightImage := images()
 	nLinesSlider = widget.NewSliderWithData(0, 6000, nLines)
 	nLinesSlider.Step = 100
-	nLines.Set(0)
+	nLines.Set(2000)
+	lineDarknessSlider = widget.NewSliderWithData(1, 255, lineDarkness)
+	lineDarknessSlider.Step = 1
+	lineDarkness.Set(30)
+	sizeSlider = widget.NewSliderWithData(200, 1000, size)
+	sizeSlider.Step = 10
+	size.Set(500)
+
+	if targetFilename == "" {
+		// fileOpenDialog.Show()
+	}
+	leftImage, rightImage = images(targetFilename, imgSize)
+
 	center := container.NewVBox(
-		widget.NewLabel("number of strings"),
+		widget.NewButtonWithIcon("Open Image", theme.FolderOpenIcon(), func() {
+			fileOpenDialog.Show()
+		}),
+		container.NewHBox(
+			widget.NewLabel("number of strings"),
+			layout.NewSpacer(),
+			widget.NewLabelWithData(binding.FloatToStringWithFormat(nLines, "%.0f")),
+		),
 		container.New(&MinSizeLayout{300, 0}, nLinesSlider),
+
+		container.NewHBox(
+			widget.NewLabel("string darkness"),
+			layout.NewSpacer(),
+			widget.NewLabelWithData(binding.FloatToStringWithFormat(lineDarkness, "%.0f")),
+		),
+		lineDarknessSlider,
+
+		container.NewHBox(
+			widget.NewLabel("image resolution"),
+			layout.NewSpacer(),
+			widget.NewLabelWithData(binding.FloatToStringWithFormat(size, "%.0f")),
+		),
+		sizeSlider,
 		// nLinesSlider,
-		widget.NewLabelWithData(binding.FloatToStringWithFormat(nLines, "%.0f")),
 	)
 
-	nLines.AddListener(binding.NewDataListener(func() {
-		f, _ := nLines.Get()
-		if nLinesValues == nil || f > completed {
-			return
-		}
+	nLines.AddListener(updateImageListener)
+	completed.AddListener(updateImageListener)
+	lineDarknessSlider.OnChangeEnded = func(f float64) {
+		calculateImages()
+	}
+	sizeSlider.OnChangeEnded = func(f float64) {
+		calculateImages()
+	}
 
-		idx := 0
-		for i, val := range nLinesValues {
-			if int(f) <= val {
-				idx = i
-				break
-			}
-		}
-		leftImage.Image = targetImages[idx]
-		leftImage.Refresh()
-		rightImage.Image = resultImages[idx]
-		rightImage.Refresh()
-	}))
 	content := container.New(
 		&LeftRightCenter{},
 		leftImage,
@@ -69,31 +110,83 @@ func main() {
 	myWindow.ShowAndRun()
 }
 
+var updateImageListener = binding.NewDataListener(func() {
+	f, _ := nLines.Get()
+	c, err := completed.Get()
+	if err != nil {
+		panic(err)
+	}
+	if nLinesValues == nil || f > c {
+		return
+	}
+
+	idx := 0
+	for i, val := range nLinesValues {
+		if int(f) <= val {
+			idx = i
+			break
+		}
+	}
+	leftImage.Image = targetImages[idx]
+	leftImage.Refresh()
+	rightImage.Image = resultImages[idx]
+	rightImage.Refresh()
+	fmt.Printf("displaying image %d out of %d\n", idx, len(targetImages))
+})
+
 const (
 	pinCount     = 160
 	paddingPixel = 0
 )
 
-func calculateImages() {
-	for val := int(nLinesSlider.Min); val < int(nLinesSlider.Max+1); val += int(nLinesSlider.Step) {
-		nLinesValues = append(nLinesValues, val)
-	}
-	fmt.Println(nLinesValues)
-
-	var err error
-	targetImage, resultImage, err = stringer.GetImages(600, "input/flower.png")
+func updateImage(reader fyne.URIReadCloser, err error) {
 	if err != nil {
 		panic(err)
 	}
-	pins := stringer.CalculatePins(pinCount, resultImage.Bounds(), paddingPixel)
+	if reader == nil {
+		return
+	}
+	targetFilename = reader.URI().Path()
+	fmt.Println(targetFilename)
+
+	li, ri := images(targetFilename, imgSize)
+	leftImage.Image = li.Image
+	rightImage.Image = ri.Image
+	// updateImageListener.DataChanged()
+	calculateImages()
+}
+
+func calculateImages() {
+	nLinesValues = nil
+	targetImages = nil
+	resultImages = nil
+	for val := int(nLinesSlider.Min); val < int(nLinesSlider.Max+1); val += int(nLinesSlider.Step) {
+		nLinesValues = append(nLinesValues, val)
+	}
+	// fmt.Println(nLinesValues)
+
+	calcSize, err := size.Get()
+	if err != nil {
+		panic(err)
+	}
+	target, result := copyImage(targetImage), copyImage(resultImage)
+
+	target = stringer.RescaleImage(target, int(calcSize))
+	result = stringer.RescaleImage(result, int(calcSize))
+
+	pins := stringer.CalculatePins(pinCount, result.Bounds(), paddingPixel)
 	allLines := stringer.CalculateLines(pins)
 
 	lastLines := 0
 	for _, nowLines := range nLinesValues {
-		stringer.Generate(targetImage, resultImage, allLines, nowLines-lastLines, uint8(10), 1)
-		targetImages = append(targetImages, copyImage(targetImage))
-		resultImages = append(resultImages, copyImage(resultImage))
-		completed = float64(nowLines)
+		// fmt.Println(nowLines - lastLines)
+		stringer.Generate(target, result, allLines, nowLines-lastLines, uint8(lineDarknessSlider.Value), 1)
+		targetImages = append(targetImages, copyImage(target))
+		resultImages = append(resultImages, copyImage(result))
+		err := completed.Set(float64(nowLines))
+		if err != nil {
+			panic(err)
+		}
 		fmt.Println(nowLines)
 		lastLines = nowLines
 	}
@@ -105,17 +198,24 @@ func copyImage(img image.Image) *image.RGBA {
 	return new
 }
 
-func images() (imgLeft, imgRight *canvas.Image) {
-	var err error
-	targetImage, resultImage, err = stringer.GetImages(512, "input/flower.png")
+func images(filename string, size int) (imgLeft, imgRight *canvas.Image) {
+	var maxSize = int(sizeSlider.Max)
+	resultImage = image.NewRGBA(image.Rect(0, 0, maxSize, maxSize))
+	draw.Draw(resultImage, resultImage.Bounds(), image.NewUniform(color.White), image.Point{}, draw.Over)
+
+	diskImage, err := stringer.OpenImageFromDisk(filename)
 	if err != nil {
-		panic(err)
+		// dialog.ShowError(fmt.Errorf("could not open the file %s: %w", filename, err), myWindow)
+		diskImage = resultImage
 	}
+	targetImage = stringer.RescaleImage(diskImage, maxSize)
+
 	leftImage := canvas.NewImageFromImage(targetImage)
 	leftImage.FillMode = canvas.ImageFillContain
-	leftImage.SetMinSize(fyne.NewSquareSize(600))
+	leftImage.SetMinSize(fyne.NewSquareSize(float32(size)))
+
 	rightImage := canvas.NewImageFromImage(resultImage)
-	rightImage.SetMinSize(fyne.NewSquareSize(600))
+	rightImage.SetMinSize(fyne.NewSquareSize(float32(size)))
 	rightImage.FillMode = canvas.ImageFillContain
 	return leftImage, rightImage
 }
