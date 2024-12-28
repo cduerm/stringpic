@@ -9,7 +9,7 @@ import (
 	"github.com/cduerm/stringpic/stringer"
 )
 
-var filename = "flower512-contrast.png"
+var filename = ""
 
 var pinCount = 300
 var paddingPixel = 0
@@ -27,19 +27,24 @@ func init() {
 	flag.IntVar(&outputSize, "size", outputSize, "size of output image")
 	flag.IntVar(&nLines, "nLines", nLines, "number of lines")
 	flag.Float64Var(&diameterMeter, "diameter [mm]", diameterMeter, "diameter of ring (for string length calculation)")
-	flag.Parse()
 }
 
 func main() {
-	targetImage, resultImage, err := stringer.GetImages(outputSize, filename)
+	flag.Parse()
+
+	target, err := stringer.OpenImageFromDisk(filename)
 	if err != nil {
 		panic(err)
 	}
-
-	pins := stringer.CalculatePins(pinCount, resultImage.Bounds(), paddingPixel)
-	allLines := stringer.CalculateLines(pins)
-
-	instructions, length := stringer.Generate(targetImage, resultImage, allLines, nLines, stringDarkness, diameterMeter)
+	resultImage, _, instructions, length, err := stringer.GenerateWithOptions(target,
+		stringer.WithPinCount(pinCount),
+		stringer.WithDiameter(diameterMeter),
+		stringer.WithLinesCount(nLines),
+		stringer.WithStringDarkness(stringDarkness),
+	)
+	if err != nil {
+		panic(err)
+	}
 
 	outFilenameBase, _ := strings.CutSuffix(path.Base(filename), path.Ext(filename))
 	err = stringer.WriteInstructionsToDisk(path.Join(outDir, outFilenameBase+"_instructions.txt"), instructions, length)
