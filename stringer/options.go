@@ -102,7 +102,7 @@ func WithEraseColor(c color.Color) Option {
 	}
 	return func(o *options) error {
 		r, g, b, a := c.RGBA()
-		o.eraseColor = color.RGBA{uint8(r), uint8(g), uint8(b), uint8(a)}
+		o.eraseColor = color.RGBA{uint8(r / 257), uint8(g / 257), uint8(b / 257), uint8(a / 257)}
 		return nil
 	}
 }
