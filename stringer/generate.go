@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-const perPinLengthMeter = 0.0025
+const perPinLengthMeter = 0.001
 
 func Generate(targetImage, resultImage *image.RGBA, allLines [][][]image.Point, nLines int, stringDarkness uint8, diameterMeter float64) (instructions []int, length float64) {
 	instructions = make([]int, 1, nLines+1)
@@ -53,9 +53,12 @@ func GenerateWithOptions(target image.Image, options ...Option) (resultImage, ta
 	targetImage = RescaleImage(o.target, o.resolution)
 	resultImage = RescaleImage(o.result, o.resolution)
 	if o.pins == nil {
-		o.pins = CalculatePins(o.pinCount, targetImage.Bounds(), 0)
+		o.pins = CalculatePins(o.pinCount, targetImage.Bounds(), 1)
 	}
 	o.allLines = CalculateLines(o.pins)
+
+	scoreFunction := ScoreWithColors(o.paintColor, o.eraseColor)
+	// scoreFunction := Score
 
 	instructions = make([]int, 1, o.nLines+1)
 	currentPin := 0
@@ -67,7 +70,7 @@ func GenerateWithOptions(target image.Image, options ...Option) (resultImage, ta
 			if linePoints == nil {
 				continue
 			}
-			score := Score(linePoints, targetImage, resultImage)
+			score := scoreFunction(linePoints, targetImage, resultImage)
 			if score > bestScore {
 				bestScore = score
 				bestPoints = linePoints
