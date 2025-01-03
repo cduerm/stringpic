@@ -169,7 +169,7 @@ func calculateImages() {
 
 	lastLines := 0
 	for _, nowLines := range nLinesValues {
-		result, target, _, _, _ = stringer.GenerateWithOptions(target,
+		result, target, _, _, _ = stringer.Generate(target,
 			stringer.WithResultImage(result),
 			stringer.WithPinCount(pinCount),
 			stringer.WithLinesCount(nowLines-lastLines),

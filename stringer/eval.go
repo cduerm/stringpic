@@ -36,14 +36,17 @@ type ScoreFunction func([]image.Point, *image.RGBA, *image.RGBA) float64
 func Score(points []image.Point, target, result *image.RGBA) float64 {
 	var score float64 = 0
 	for _, p := range points {
-		rTarget := target.Pix[target.PixOffset(p.X, p.Y)]
-		rResult := result.Pix[result.PixOffset(p.X, p.Y)]
-		val := (float64(rResult) - float64(rTarget)) / 255
-		score += val
+		targetOffset := target.PixOffset(p.X, p.Y)
+		resultOffset := result.PixOffset(p.X, p.Y)
+		deltaR := (float64(result.Pix[resultOffset+0]) - float64(target.Pix[targetOffset+0])) / 255
+		deltaG := (float64(result.Pix[resultOffset+1]) - float64(target.Pix[targetOffset+1])) / 255
+		deltaB := (float64(result.Pix[resultOffset+2]) - float64(target.Pix[targetOffset+2])) / 255
+		score += evalDiff(deltaR) + evalDiff(deltaG) + evalDiff(deltaB)
 	}
 	return score / float64(len(points))
 }
 
+// not yet properly implemented, is meant to allow for stings of different colors
 func ScoreWithColors(paintColor, eraseColor color.Color) ScoreFunction {
 	// pr, pg, pb, pa := paintColor.RGBA()
 	// paintR := float64(uint8(pr / pa))

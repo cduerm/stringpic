@@ -36,7 +36,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	resultImage, _, instructions, length, err := stringer.GenerateWithOptions(target,
+	resultImage, _, instructions, length, err := stringer.Generate(target,
 		stringer.WithPinCount(pinCount),
 		stringer.WithDiameter(diameterMM/1000),
 		stringer.WithLinesCount(nLines),

@@ -41,7 +41,7 @@ func BenchmarkColorOverUint8(b *testing.B) {
 	c2 := color.RGBA{255, 120, 100, 50}
 	b.ResetTimer()
 	for range b.N {
-		c = ColorOverUint8(c1, c2)
+		c = ColorOverRGBA(c1, c2)
 	}
 	_ = c
 }
@@ -94,7 +94,7 @@ func TestColorOver(t *testing.T) {
 	for _, c2 := range testData[:] {
 		c1 := color.RGBA{255, 255, 255, 255}
 		over1 := ColorOver(c1, c2)
-		over2 := ColorOverUint8(c1, c2)
+		over2 := ColorOverRGBA(c1, c2)
 		if over1 != over2 {
 			t.Fail()
 			t.Log(c1, c2, over1, over2)

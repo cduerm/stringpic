@@ -12,6 +12,8 @@ type Pin struct {
 	X, Y float64
 }
 
+const randomness = 0.2
+
 func CalculatePins(n int, bounds image.Rectangle, padding int) []Pin {
 	centerX, centerY := float64(bounds.Max.X-bounds.Min.X)/2, float64(bounds.Max.Y-bounds.Min.Y)/2
 	radius := centerX - float64(padding)
@@ -19,7 +21,7 @@ func CalculatePins(n int, bounds image.Rectangle, padding int) []Pin {
 	pins := make([]Pin, n)
 	step := 2 * math.Pi / float64(n)
 	for i := range n {
-		r := 2 * (rand.Float64() - 0.5) * step * 0.2
+		r := 2 * (rand.Float64() - 0.5) * step * randomness
 		x := centerX + radius*math.Sin(float64(i)*step+r)
 		y := centerY - radius*math.Cos(float64(i)*step+r)
 		pins[i] = Pin{x, y}

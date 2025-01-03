@@ -16,7 +16,7 @@ func ColorOver(under, over color.Color) color.Color {
 	return result
 }
 
-func ColorOverUint8(under, over color.RGBA) color.RGBA {
+func ColorOverRGBA(under, over color.RGBA) color.RGBA {
 	r := (over.R + uint8(uint16(under.R)*uint16(0xff-over.A)/0xff))
 	g := (over.G + uint8(uint16(under.G)*uint16(0xff-over.A)/0xff))
 	b := (over.B + uint8(uint16(under.B)*uint16(0xff-over.A)/0xff))
