@@ -80,7 +80,7 @@ func WithStringDarkness(d uint8) Option {
 	}
 	return func(o *options) error {
 		o.paintColor = color.RGBA{0, 0, 0, d}
-		o.eraseColor = color.RGBA{d, d, d, d}
+		o.eraseColor = color.RGBA{0, 0, 0, 0}
 		return nil
 	}
 }

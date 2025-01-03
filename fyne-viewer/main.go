@@ -23,6 +23,7 @@ var completed = binding.NewFloat()
 var nLines slider
 var lineDarkness slider
 var size slider
+var erase slider
 
 var eraseColor color.Color = color.RGBA{30, 30, 30, 30}
 
@@ -59,16 +60,12 @@ func init() {
 }
 
 func windowContent() *fyne.Container {
-	nLines = NewSlider("number of steps", "%.0f", 0, 6000, 100, 2000)
-	lineDarkness = NewSlider("string darkness", "%.0f", 1, 255, 1, 30)
-	size = NewSlider("image resolution", "%.0f", 100, 1000, 10, 500)
+	nLines = NewSlider("number of steps", "%.0f", 0, 6000, 100, 2500)
+	lineDarkness = NewSlider("string darkness", "%.0f", 1, 255, 1, 75)
+	size = NewSlider("image resolution", "%.0f", 100, 1000, 10, 800)
+	erase = NewSlider("erase ratio", "%3.2f", 0, 2, 0.05, 0)
 
 	leftImage, rightImage = images(targetFilename, displayImgSize)
-	cp := dialog.NewColorPicker("pick color", "", func(c color.Color) {
-		eraseColor = c
-		calculateImages()
-	}, myWindow)
-	cp.Advanced = true
 
 	center := container.New(&MinSizeLayout{300, 0}, container.NewPadded(container.NewVBox(
 		widget.NewButtonWithIcon("Open Image", theme.FolderOpenIcon(), func() {
@@ -77,7 +74,7 @@ func windowContent() *fyne.Container {
 		nLines.Container(),
 		lineDarkness.Container(),
 		size.Container(),
-		widget.NewButton("erase color", func() { cp.Show() }),
+		erase.Container(),
 	)))
 
 	content := container.New(
@@ -121,6 +118,9 @@ func setupListeners() {
 		calculateImages()
 	}
 	size.OnChangeEnded = func(f float64) {
+		calculateImages()
+	}
+	erase.OnChangeEnded = func(f float64) {
 		calculateImages()
 	}
 }
@@ -167,6 +167,7 @@ func calculateImages() {
 	target = stringer.RescaleImage(target, int(calcSize))
 	result = stringer.RescaleImage(result, int(calcSize))
 
+	eraseValue := uint8(lineDarkness.Value * erase.Value)
 	lastLines := 0
 	for _, nowLines := range nLinesValues {
 		result, target, _, _, _ = stringer.Generate(target,
@@ -175,7 +176,7 @@ func calculateImages() {
 			stringer.WithLinesCount(nowLines-lastLines),
 			stringer.WithStringDarkness(uint8(lineDarkness.Value)),
 			stringer.WithResolution(int(size.Value)),
-			// stringer.WithEraseColor(eraseColor),
+			stringer.WithEraseColor(color.RGBA{eraseValue, eraseValue, eraseValue, eraseValue}),
 		)
 		targetImages = append(targetImages, copyImage(target))
 		resultImages = append(resultImages, copyImage(result))
