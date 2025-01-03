@@ -12,13 +12,12 @@ import (
 var filename = ""
 
 var pinCount = 300
-var paddingPixel = 0
 var outputSize = 512
 var nLines = 2000
-var diameterMeter float64 = 0.226
+var diameterMM float64 = 0.226
 var outDir = "output"
 
-var stringDarkness = uint8(max(1, min(255, 20*(float64(outputSize)/400)*(2500/float64(nLines)))))
+var stringDarkness = int(max(1, min(255, 20*(float64(outputSize)/400)*(2500/float64(nLines)))))
 
 func init() {
 	flag.StringVar(&filename, "filename", filename, "png file to convert to string art")
@@ -26,7 +25,8 @@ func init() {
 	flag.IntVar(&pinCount, "pinCount", pinCount, "number of pins in circular pattern")
 	flag.IntVar(&outputSize, "size", outputSize, "size of output image")
 	flag.IntVar(&nLines, "nLines", nLines, "number of lines")
-	flag.Float64Var(&diameterMeter, "diameter [mm]", diameterMeter, "diameter of ring (for string length calculation)")
+	flag.IntVar(&stringDarkness, "darkness", int(stringDarkness), "string darkness (value between 1 and 255)")
+	flag.Float64Var(&diameterMM, "diameter", diameterMM, "diameter of ring (for string length calculation) in mm")
 }
 
 func main() {
@@ -38,9 +38,12 @@ func main() {
 	}
 	resultImage, _, instructions, length, err := stringer.GenerateWithOptions(target,
 		stringer.WithPinCount(pinCount),
-		stringer.WithDiameter(diameterMeter),
+		stringer.WithDiameter(diameterMM/1000),
 		stringer.WithLinesCount(nLines),
-		stringer.WithStringDarkness(stringDarkness),
+		stringer.WithStringDarkness(uint8(stringDarkness)),
+		stringer.WithResolution(outputSize),
+		// stringer.WithEraseColor(color.RGBA{20, 20, 20, 20}),
+		// stringer.WithPaintColor(color.RGBA{0, 0, 0, 30}),
 	)
 	if err != nil {
 		panic(err)
