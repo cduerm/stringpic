@@ -107,6 +107,19 @@ func WithEraseColor(c color.Color) Option {
 	}
 }
 
+func WithEraseFactor(f float64) Option {
+	if f < 0 {
+		return errorOption("factor must be larger than 0")
+	}
+	return func(o *options) error {
+		r, g, b, a := o.paintColor.RGBA()
+		factor := f / 257
+
+		o.eraseColor = color.RGBA{uint8(min(255, float64(r)*factor)), uint8(min(255, float64(g)*factor)), uint8(min(255, float64(b)*factor)), uint8(min(255, float64(a)*factor))}
+		return nil
+	}
+}
+
 func WithDiameter(d float64) Option {
 	return func(o *options) error {
 		o.circleDiameter = d
