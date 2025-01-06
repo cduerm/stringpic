@@ -112,10 +112,11 @@ func WithEraseFactor(f float64) Option {
 		return errorOption("factor must be larger than 0")
 	}
 	return func(o *options) error {
-		r, g, b, a := o.paintColor.RGBA()
+		_, _, _, a := o.paintColor.RGBA()
 		factor := f / 257
+		value := uint8(min(255, float64(a)*factor))
 
-		o.eraseColor = color.RGBA{uint8(min(255, float64(r)*factor)), uint8(min(255, float64(g)*factor)), uint8(min(255, float64(b)*factor)), uint8(min(255, float64(a)*factor))}
+		o.eraseColor = color.RGBA{value, value, value, value}
 		return nil
 	}
 }
