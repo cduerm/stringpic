@@ -32,7 +32,7 @@ func Generate(target image.Image, options ...Option) (resultImage, targetImage *
 	for range o.nLines {
 		bestScore := math.Inf(-1)
 		var bestPoints []image.Point
-		var bestPin = -1
+		var bestPin = (currentPin + o.pinCount/2) % o.pinCount
 		for i, linePoints := range o.allLines[currentPin] {
 			if linePoints == nil {
 				continue
