@@ -1,4 +1,4 @@
-package main
+package stringui
 
 import "fyne.io/fyne/v2"
 

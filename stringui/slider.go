@@ -1,4 +1,4 @@
-package main
+package stringui
 
 import (
 	"fyne.io/fyne/v2"
@@ -8,15 +8,15 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-type slider struct {
+type SliderWithLabel struct {
 	*widget.Slider
 	value  binding.Float
 	label  string
 	format string
 }
 
-func NewSlider(label, format string, min, max, step, start float64) slider {
-	s := slider{}
+func NewSliderWithLabel(label, format string, min, max, step, start float64) SliderWithLabel {
+	s := SliderWithLabel{}
 	s.value = binding.NewFloat()
 	s.label = label
 	s.format = format
@@ -26,7 +26,7 @@ func NewSlider(label, format string, min, max, step, start float64) slider {
 	return s
 }
 
-func (s slider) Container() *fyne.Container {
+func (s SliderWithLabel) Container() *fyne.Container {
 	return container.NewVBox(
 		container.NewHBox(
 			widget.NewLabel(s.label),
@@ -37,6 +37,6 @@ func (s slider) Container() *fyne.Container {
 	)
 }
 
-func (s slider) Get() (float64, error) {
+func (s SliderWithLabel) Get() (float64, error) {
 	return s.value.Get()
 }
