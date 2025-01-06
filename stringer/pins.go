@@ -42,7 +42,7 @@ func CalculateLines(pins []Pin) [][][]image.Point {
 		for j, q := range pins {
 			s, b := min(i, j), max(i, j)
 			diff := min(b-s, n+s-b)
-			if diff < 10 {
+			if diff < min(n/10, 10) {
 				continue
 			}
 			lines[i][j] = LinePoints(p, q)
