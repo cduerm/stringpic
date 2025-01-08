@@ -26,6 +26,7 @@ var defaultOptions = options{
 	resolution:     500,
 }
 
+// Options allow to modify the string image generation.
 type Option func(o *options) error
 
 func errorOption(s string) Option {
@@ -34,6 +35,8 @@ func errorOption(s string) Option {
 	}
 }
 
+// WithResultImage can be used to start the process with a non-empty result image.
+// This can be useful, of a previous generation shall be continued.
 func WithResultImage(img image.Image) Option {
 	if img == nil {
 		return errorOption("InputImage error: image must not be nil")
@@ -44,6 +47,7 @@ func WithResultImage(img image.Image) Option {
 	}
 }
 
+// WithLinesCount defines the number of line segments used.
 func WithLinesCount(n int) Option {
 	if n < 0 {
 		return errorOption("n must be positive integer")
@@ -54,6 +58,7 @@ func WithLinesCount(n int) Option {
 	}
 }
 
+// WithPinCount uses pins in a circular pattern with the given number of pins.
 func WithPinCount(n int) Option {
 	if n < 2 {
 		return errorOption("number of pins must be at least 2")
@@ -64,6 +69,8 @@ func WithPinCount(n int) Option {
 	}
 }
 
+// WithPins allows to directly provide a list of pins. Can be used to define a non-circular
+// pattern of pins.
 func WithPins(pins []Pin) Option {
 	if len(pins) < 2 {
 		return errorOption("number of pins must be at least 2")
@@ -74,6 +81,8 @@ func WithPins(pins []Pin) Option {
 	}
 }
 
+// WithStringDarkness allows to set a custom string darkness, e.g. to control how often the same
+// line will be used. 
 func WithStringDarkness(d uint8) Option {
 	if d == 0 {
 		return errorOption("string darkness must be at least 1")
@@ -85,6 +94,7 @@ func WithStringDarkness(d uint8) Option {
 	}
 }
 
+// WithPaintColor allows to define a certain color (including alpha) for the string
 func WithPaintColor(c color.Color) Option {
 	if c == nil {
 		return errorOption("paint color cannot be nil")
@@ -96,6 +106,8 @@ func WithPaintColor(c color.Color) Option {
 	}
 }
 
+// WithEraseColor allows to define a color (with alpha) that is used to paint out the already
+// used connections in the target image. 
 func WithEraseColor(c color.Color) Option {
 	if c == nil {
 		return errorOption("erase color cannot be nil")
@@ -107,6 +119,8 @@ func WithEraseColor(c color.Color) Option {
 	}
 }
 
+// WithEraseFactor allows to paint out a ceratin fraction of the painted line. Can be useful to control
+// contrast in the final result. It always uses white to paint out the lines. Otherwise use WithEraseColor.
 func WithEraseFactor(f float64) Option {
 	if f < 0 {
 		return errorOption("factor must be larger than 0")
@@ -121,6 +135,7 @@ func WithEraseFactor(f float64) Option {
 	}
 }
 
+// WithDiameter allows to set the image diameter for an accurate string length calculation. Unit is meters.
 func WithDiameter(d float64) Option {
 	return func(o *options) error {
 		o.circleDiameter = d
@@ -128,6 +143,9 @@ func WithDiameter(d float64) Option {
 	}
 }
 
+// WithResolution controls the pixel size of the output image. More pixels allow for more pleasant preview, 
+// but a lower resolution might yield a better representation with physical string as fewer "buckets" for
+// darkening the image are available.
 func WithResolution(n int) Option {
 	if n < 1 {
 		return errorOption("resolution must be positive integer")

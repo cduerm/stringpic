@@ -7,6 +7,9 @@ import (
 
 const perPinLengthMeter = 0.001
 
+// Generate will use a target image to calculate a string image and return the result image, the possibly altered
+// target image (if options like WithEraseFactor are used), the order of pins to use and the length of string.
+// An error will be returned, if one of the given options is used incorrectly.
 func Generate(target image.Image, options ...Option) (resultImage, targetImage *image.RGBA, instructions []int, length float64, err error) {
 	o := defaultOptions
 	o.target = target

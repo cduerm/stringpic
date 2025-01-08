@@ -5,6 +5,7 @@ import (
 	"image/color"
 )
 
+// LinePoints gets a list of points that form a line from a pin to another pin
 func LinePoints(from, to Pin) []image.Point {
 	start := image.Point{int(from.X), int(from.Y)}
 	end := image.Point{int(to.X), int(to.Y)}
@@ -31,8 +32,12 @@ func LinePoints(from, to Pin) []image.Point {
 	return points
 }
 
+// ScoreFunction defines functions, that can be used do calculate the score of a number of points 
+// against a target and a result image. Used e.g. with LinePoints to evaluate the possible lines 
+// and decide where to draw the next line.
 type ScoreFunction func([]image.Point, *image.RGBA, *image.RGBA) float64
 
+// Score is the default scoring function.
 func Score(points []image.Point, target, result *image.RGBA) float64 {
 	var score float64 = 0
 	for _, p := range points {
@@ -46,7 +51,8 @@ func Score(points []image.Point, target, result *image.RGBA) float64 {
 	return score / float64(len(points))
 }
 
-// not yet properly implemented, is meant to allow for stings of different colors
+// ScoreWithColors shall take into account the color of the line that is to be drawn.
+// it is not yet properly implemented.
 func ScoreWithColors(paintColor, eraseColor color.Color) ScoreFunction {
 	// pr, pg, pb, pa := paintColor.RGBA()
 	// paintR := float64(uint8(pr / pa))

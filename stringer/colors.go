@@ -4,6 +4,7 @@ import (
 	"image/color"
 )
 
+// ColorOver blends to colors regardless of type using the over method
 func ColorOver(under, over color.Color) color.Color {
 	r1, g1, b1, a1 := under.RGBA()
 	r2, g2, b2, a2 := over.RGBA()
@@ -16,6 +17,7 @@ func ColorOver(under, over color.Color) color.Color {
 	return result
 }
 
+// ColorOverRGBA blends to RGBA colors using the over method
 func ColorOverRGBA(under, over color.RGBA) color.RGBA {
 	r := (over.R + uint8(uint16(under.R)*uint16(0xff-over.A)/0xff))
 	g := (over.G + uint8(uint16(under.G)*uint16(0xff-over.A)/0xff))

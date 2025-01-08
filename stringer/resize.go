@@ -2,6 +2,9 @@ package stringer
 
 import "image"
 
+// RescaleImage takes an image and a size and will create an RGBA image with
+// square dimensions. The input image will always be cropped to square aspect ratio
+// and scaled using nearest neighbour algorithm.
 func RescaleImage(oldImg image.Image, newSize int) *image.RGBA {
 	bounds := oldImg.Bounds()
 	oldSize := min(bounds.Dx(), bounds.Dy())
