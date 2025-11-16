@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"os"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -17,6 +18,7 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/cduerm/stringpic/htmlViewer"
 	"github.com/cduerm/stringpic/stringer"
 )
 
@@ -46,6 +48,7 @@ type StringerApp struct {
 		ResultImages        []*image.RGBA
 		Instructions        []int
 		Lengths             []float64
+		SelectedId          int
 	}
 	Options struct {
 		ImageDisplaySize int
@@ -59,10 +62,11 @@ func (s *StringerApp) setupContent() {
 		s.FileOpenDialog.SetLocation(root)
 	}
 
-	s.FileSaveDialog = dialog.NewFileSave(nil, s.Window)
+	s.FileSaveDialog = dialog.NewFileSave(s.saveFileCallback, s.Window)
 
 	s.Widgets.Lines = NewSliderWithLabel("Number of Steps", "%.0f", 0, 6000, 100, 2500)
 	s.Widgets.Lines.OnChanged = func(f float64) {
+		s.State.SelectedId = int((f - s.Widgets.Lines.Min + 1) / s.Widgets.Lines.Step)
 		if int(f) <= s.State.CompletedLines {
 			s.setImages(int((f - s.Widgets.Lines.Min + 1) / s.Widgets.Lines.Step))
 		}
@@ -171,7 +175,52 @@ func (s *StringerApp) openFileCallback(reader fyne.URIReadCloser, err error) {
 	s.Recalculate()
 }
 
+func (s *StringerApp) saveFileCallback(writer fyne.URIWriteCloser, err error) {
+	if s.State.Calculating {
+		d := dialog.NewInformation("Calculation", "The Calculation mus be completed before saving", s.Window)
+		d.Show()
+		return
+	}
+	if err != nil {
+		panic(err)
+	}
+	if writer == nil {
+		return
+	}
+	uri := writer.URI()
+	filepath := uri.Path()
+	err = os.Remove(filepath)
+	if err != nil {
+		panic(err)
+	}
+
+	instructions := s.State.Instructions[:int(s.Widgets.Lines.Value)+1]
+	length := 0.0
+	for _, l := range s.State.Lengths[:s.State.SelectedId] {
+		length += l
+	}
+	resultImage := s.Widgets.RightImage.Image
+
+	err = stringer.WriteInstructionsToDisk(filepath+"_instructions.txt", instructions, length)
+	if err != nil {
+		panic(err)
+	}
+
+	err = stringer.SaveImageToDisk(filepath+"_stringer.png", resultImage)
+	if err != nil {
+		panic(err)
+	}
+
+	err = htmlViewer.WriteInstructions(filepath+"_instructions.html", instructions)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (s *StringerApp) setImages(i int) {
+	if len(s.State.TargetImages) == 0 {
+		return
+	}
 	if i > len(s.State.TargetImages) {
 		panic("target image not yet calculated")
 	}
@@ -259,7 +308,7 @@ func (s *StringerApp) LinesVariants() int {
 
 func NewStringerApp() (s *StringerApp) {
 	s = new(StringerApp)
-	s.App = app.New()
+	s.App = app.NewWithID("e1b11a98c96a40ba382d24e784818046")
 	s.Window = s.App.NewWindow("Stringer by cduerm")
 
 	icon, err := fyne.LoadResourceFromPath("stringui/assets/app_icon.png")
