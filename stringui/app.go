@@ -308,7 +308,7 @@ func (s *StringerApp) LinesVariants() int {
 
 func NewStringerApp() (s *StringerApp) {
 	s = new(StringerApp)
-	s.App = app.NewWithID("e1b11a98c96a40ba382d24e784818046")
+	s.App = app.NewWithID("com.duermann.stringpic")
 	s.Window = s.App.NewWindow("Stringer by cduerm")
 
 	icon, err := fyne.LoadResourceFromPath("stringui/assets/app_icon.png")
