@@ -1,12 +1,14 @@
 package stringui
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
 	"math"
 	"os"
+	"strconv"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -39,6 +41,7 @@ type StringerApp struct {
 		ProgressBar       *widget.ProgressBar
 		LeftImage         *canvas.Image
 		RightImage        *canvas.Image
+		DiameterInput     *fyne.Container
 	}
 	State struct {
 		Calculating         bool
@@ -49,6 +52,7 @@ type StringerApp struct {
 		Instructions        []int
 		Lengths             []float64
 		SelectedId          int
+		ImageDiameterMM     float64
 	}
 	Options struct {
 		ImageDisplaySize int
@@ -76,6 +80,25 @@ func (s *StringerApp) setupContent() {
 	s.Widgets.Erase = NewSliderWithLabel("Erase Ratio", "%3.2f", 0, 2, 0.05, 0)
 	s.Widgets.Resolution = NewSliderWithLabel("Image Resolution", "%.0f", 100, 1000, 10, 800)
 	s.Widgets.Pins = NewSliderWithLabel("Number of Pins", "%.0f", 10, 600, 10, 160)
+	entry := widget.NewEntry()
+	entry.Validator = func(s string) error {
+		_, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return errors.New("must be a valid number")
+		}
+		return nil
+	}
+	entry.OnChanged = func(text string) {
+		if entry.Validate() != nil {
+			return
+		}
+		diameter, _ := strconv.ParseFloat(text, 64)
+		s.State.ImageDiameterMM = diameter
+	}
+	entry.SetPlaceHolder("220")
+	s.Widgets.DiameterInput = container.NewGridWithColumns(2,
+		widget.NewLabel("Diameter [mm]"),
+		entry)
 
 	s.Widgets.OpenButton = widget.NewButtonWithIcon(
 		"Open Image",
@@ -134,6 +157,7 @@ func (s *StringerApp) setupContent() {
 					s.Widgets.Erase.Container(),
 					s.Widgets.Pins.Container(),
 					s.Widgets.Resolution.Container(),
+					s.Widgets.DiameterInput,
 					s.Widgets.RecalculateButton,
 					s.Widgets.ProgressBar,
 					layout.NewSpacer(),
@@ -225,13 +249,13 @@ func (s *StringerApp) setImages(i int) {
 		panic("target image not yet calculated")
 	}
 	s.Widgets.LeftImage.Image = s.State.TargetImages[i]
-	s.Widgets.LeftImage.Refresh()
+	fyne.Do(func() { s.Widgets.LeftImage.Refresh() })
 
 	if i > len(s.State.ResultImages) {
 		panic("result image not yet calculated")
 	}
 	s.Widgets.RightImage.Image = s.State.ResultImages[i]
-	s.Widgets.RightImage.Refresh()
+	fyne.Do(func() { s.Widgets.RightImage.Refresh() })
 }
 
 func (s *StringerApp) Recalculate() {
@@ -272,6 +296,7 @@ func (s *StringerApp) Recalculate() {
 					stringer.WithStringDarkness(darkness),
 					stringer.WithEraseFactor(erase),
 					stringer.WithResolution(resolution),
+					stringer.WithDiameter(s.State.ImageDiameterMM/1000),
 				)
 				if err != nil {
 					panic(err)
@@ -287,7 +312,7 @@ func (s *StringerApp) Recalculate() {
 				}
 				currentLines = nextLines
 				s.State.CompletedLines = int(currentLines)
-				s.Widgets.ProgressBar.SetValue(currentLines)
+				fyne.Do(func() { s.Widgets.ProgressBar.SetValue(currentLines) })
 			}
 		}
 		s.State.Calculating = false
@@ -311,11 +336,11 @@ func NewStringerApp() (s *StringerApp) {
 	s.App = app.NewWithID("com.duermann.stringpic")
 	s.Window = s.App.NewWindow("Stringer by cduerm")
 
-	icon, err := fyne.LoadResourceFromPath("stringui/assets/app_icon.png")
-	if err != nil {
-		panic(err)
-	}
-	s.Window.SetIcon(icon)
+	// icon, err := fyne.LoadResourceFromPath("stringui/assets/app_icon.png")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// s.Window.SetIcon(icon)
 
 	s.setupContent()
 
