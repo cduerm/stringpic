@@ -3,6 +3,8 @@ package stringer
 import (
 	"image"
 	"math"
+	"runtime"
+	"sync"
 )
 
 const perPinLengthMeter = 0.001
@@ -33,20 +35,7 @@ func Generate(target image.Image, options ...Option) (resultImage, targetImage *
 	instructions = make([]int, 1, o.nLines+1)
 	currentPin := 0
 	for range o.nLines {
-		bestScore := math.Inf(-1)
-		var bestPoints []image.Point
-		var bestPin = (currentPin + o.pinCount/2) % o.pinCount
-		for i, linePoints := range o.allLines[currentPin] {
-			if linePoints == nil {
-				continue
-			}
-			score := scoreFunction(linePoints, targetImage, resultImage)
-			if score > bestScore {
-				bestScore = score
-				bestPoints = linePoints
-				bestPin = i
-			}
-		}
+		bestPoints, bestPin := getBestLineParallel(scoreFunction, currentPin, o, targetImage, resultImage)
 
 		PixelOver(resultImage, bestPoints, o.paintColor)
 		PixelOver(targetImage, bestPoints, o.eraseColor)
@@ -58,4 +47,61 @@ func Generate(target image.Image, options ...Option) (resultImage, targetImage *
 		currentPin = bestPin
 	}
 	return resultImage, targetImage, instructions, length, nil
+}
+
+func getBestLine(scoreFunction ScoreFunction, currentPin int, o options, targetImage, resultImage *image.RGBA) (bestPoints []image.Point, bestPin int) {
+	bestScore := math.Inf(-1)
+	bestPin = (currentPin + o.pinCount/2) % o.pinCount
+	for i, linePoints := range o.allLines[currentPin] {
+		if linePoints == nil {
+			continue
+		}
+		score := scoreFunction(linePoints, targetImage, resultImage)
+		if score > bestScore {
+			bestScore = score
+			bestPoints = linePoints
+			bestPin = i
+		}
+	}
+	return
+}
+
+func getBestLineParallel(scoreFunction ScoreFunction, currentPin int, o options, targetImage, resultImage *image.RGBA) (bestPoints []image.Point, bestPin int) {
+	n := runtime.NumCPU()
+	bestScores := make([]float64, n)
+	bestPins := make([]int, n)
+	lines := o.allLines[currentPin]
+	lenLines := len(lines)
+	wg := new(sync.WaitGroup)
+	for id := range n {
+		wg.Add(1)
+		go func() {
+			bestScore := math.Inf(-1)
+			bestPin := (currentPin + o.pinCount/2) % o.pinCount
+			for i, linePoints := range lines[id*lenLines/n : (id+1)*lenLines/n] {
+				if linePoints == nil {
+					continue
+				}
+				score := scoreFunction(linePoints, targetImage, resultImage)
+				if score > bestScore {
+					bestScore = score
+					bestPin = id*lenLines/n + i
+				}
+			}
+			bestScores[id] = bestScore
+			bestPins[id] = bestPin
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	bestScore := math.Inf(-1)
+	for i := range bestPins {
+		if bestScores[i] > bestScore {
+			bestScore = bestScores[i]
+			bestPin = bestPins[i]
+		}
+	}
+	bestPoints = lines[bestPin]
+	return
 }

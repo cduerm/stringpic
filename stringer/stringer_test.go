@@ -139,3 +139,56 @@ func TestPaintLine(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkFindBestLineSingle(b *testing.B) {
+	o := defaultOptions
+	img := RescaleImage(image.White, o.resolution)
+	WithPinCount(200)(&o)
+	WithResolution(4000)(&o)
+	o.pins = CalculatePins(o.pinCount, img.Bounds(), 1)
+	o.allLines = CalculateLines(o.pins)
+	scoreFunction := Score
+
+	for range b.N {
+		_, _ = getBestLine(scoreFunction, 0, o, img, img)
+	}
+}
+
+func BenchmarkFindBestLineParallel(b *testing.B) {
+	o := defaultOptions
+	img := RescaleImage(image.White, o.resolution)
+	WithPinCount(200)(&o)
+	WithResolution(4000)(&o)
+	o.pins = CalculatePins(o.pinCount, img.Bounds(), 1)
+	o.allLines = CalculateLines(o.pins)
+	scoreFunction := Score
+
+	for range b.N {
+		_, _ = getBestLineParallel(scoreFunction, 0, o, img, img)
+	}
+}
+
+func TestFindBestLineParallel(t *testing.T) {
+	o := defaultOptions
+	targetRaw, err := OpenImageFromDisk("../input/flower.png")
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+	}
+	WithPinCount(400)(&o)
+	WithResolution(1000)(&o)
+	target := RescaleImage(targetRaw, o.resolution)
+	result := RescaleImage(image.White, o.resolution)
+	o.pins = CalculatePins(o.pinCount, target.Bounds(), 1)
+	o.allLines = CalculateLines(o.pins)
+	scoreFunction := Score
+
+	_, want := getBestLine(scoreFunction, 0, o, target, result)
+	result = RescaleImage(image.White, o.resolution)
+	_, got := getBestLineParallel(scoreFunction, 0, o, target, result)
+
+	if want != got {
+		t.Logf("want: %v, got: %v", want, got)
+		t.Fail()
+	}
+}
