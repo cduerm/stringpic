@@ -3,4 +3,4 @@ Icon = "stringui/assets/app_icon.png"
 Name = "StringPic"
 ID = "com.duermann.stringpic"
 Version = "0.1.0"
-Build = 4
+Build = 5

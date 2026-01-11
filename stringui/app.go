@@ -76,9 +76,9 @@ func (s *StringerApp) setupContent() {
 		}
 		s.Widgets.Lines.value.Set(f)
 	}
-	s.Widgets.Darkness = NewSliderWithLabel("String Darkness", "%.0f", 1, 255, 1, 75)
+	s.Widgets.Darkness = NewSliderWithLabel("String Darkness", "%.0f", 1, 255, 1, 50)
 	s.Widgets.Erase = NewSliderWithLabel("Erase Ratio", "%3.2f", 0, 2, 0.05, 0)
-	s.Widgets.Resolution = NewSliderWithLabel("Image Resolution", "%.0f", 100, 1000, 10, 800)
+	s.Widgets.Resolution = NewSliderWithLabel("Image Resolution", "%.0f", 100, 1000, 10, 500)
 	s.Widgets.Pins = NewSliderWithLabel("Number of Pins", "%.0f", 10, 600, 10, 160)
 	entry := widget.NewEntry()
 	entry.Validator = func(s string) error {
@@ -128,7 +128,7 @@ func (s *StringerApp) setupContent() {
 	s.Widgets.ProgressBar.TextFormatter = func() string {
 		max := int(s.Widgets.ProgressBar.Max)
 		val := int(s.Widgets.ProgressBar.Value)
-		percent := float64(val) / float64(val) * 100
+		percent := float64(val) / float64(max) * 100
 		if math.IsNaN(percent) {
 			percent = 0
 		}
@@ -336,11 +336,7 @@ func NewStringerApp() (s *StringerApp) {
 	s.App = app.NewWithID("com.duermann.stringpic")
 	s.Window = s.App.NewWindow("Stringer by cduerm")
 
-	// icon, err := fyne.LoadResourceFromPath("stringui/assets/app_icon.png")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// s.Window.SetIcon(icon)
+	s.Window.SetIcon(resourceAppiconPng)
 
 	s.setupContent()
 
