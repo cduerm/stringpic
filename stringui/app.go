@@ -95,7 +95,7 @@ func (s *StringerApp) setupContent() {
 		diameter, _ := strconv.ParseFloat(text, 64)
 		s.State.ImageDiameterMM = diameter
 	}
-	entry.SetPlaceHolder("220")
+	entry.SetText("220")
 	s.Widgets.DiameterInput = container.NewGridWithColumns(2,
 		widget.NewLabel("Diameter [mm]"),
 		entry)
@@ -179,6 +179,9 @@ func (s *StringerApp) openFileCallback(reader fyne.URIReadCloser, err error) {
 	}
 	defer reader.Close()
 
+	if s.State.Calculating {
+		s.Cancel()
+	}
 	img, _, err := image.Decode(reader)
 	if err != nil {
 		panic(err)
@@ -333,9 +336,9 @@ func (s *StringerApp) LinesVariants() int {
 
 func NewStringerApp() (s *StringerApp) {
 	s = new(StringerApp)
+
 	s.App = app.NewWithID("com.duermann.stringpic")
 	s.Window = s.App.NewWindow("Stringer by cduerm")
-
 	s.Window.SetIcon(resourceAppiconPng)
 
 	s.setupContent()
