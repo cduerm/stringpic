@@ -15,6 +15,7 @@ type options struct {
 	circleDiameter         float64
 	resolution             int
 	pins                   []Pin
+	noPreview              bool
 }
 
 var defaultOptions = options{
@@ -24,6 +25,7 @@ var defaultOptions = options{
 	circleDiameter: 1.0,
 	pinCount:       240,
 	resolution:     500,
+	noPreview:      false,
 }
 
 // Options allow to modify the string image generation.
@@ -82,7 +84,7 @@ func WithPins(pins []Pin) Option {
 }
 
 // WithStringDarkness allows to set a custom string darkness, e.g. to control how often the same
-// line will be used. 
+// line will be used.
 func WithStringDarkness(d uint8) Option {
 	if d == 0 {
 		return errorOption("string darkness must be at least 1")
@@ -107,7 +109,7 @@ func WithPaintColor(c color.Color) Option {
 }
 
 // WithEraseColor allows to define a color (with alpha) that is used to paint out the already
-// used connections in the target image. 
+// used connections in the target image.
 func WithEraseColor(c color.Color) Option {
 	if c == nil {
 		return errorOption("erase color cannot be nil")
@@ -143,7 +145,7 @@ func WithDiameter(d float64) Option {
 	}
 }
 
-// WithResolution controls the pixel size of the output image. More pixels allow for more pleasant preview, 
+// WithResolution controls the pixel size of the output image. More pixels allow for more pleasant preview,
 // but a lower resolution might yield a better representation with physical string as fewer "buckets" for
 // darkening the image are available.
 func WithResolution(n int) Option {
@@ -152,6 +154,13 @@ func WithResolution(n int) Option {
 	}
 	return func(o *options) error {
 		o.resolution = n
+		return nil
+	}
+}
+
+func WithoutPreview() Option {
+	return func(o *options) error {
+		o.noPreview = true
 		return nil
 	}
 }

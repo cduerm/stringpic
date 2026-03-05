@@ -12,19 +12,19 @@ const perPinLengthMeter = 0.001
 // Generate will use a target image to calculate a string image and return the result image, the possibly altered
 // target image (if options like WithEraseFactor are used), the order of pins to use and the length of string.
 // An error will be returned, if one of the given options is used incorrectly.
-func Generate(target image.Image, options ...Option) (resultImage, targetImage *image.RGBA, instructions []int, length float64, err error) {
+func Generate(target image.Image, options ...Option) (Result, error) {
 	o := defaultOptions
 	o.target = target
 	o.result = image.White
 
 	for _, opt := range options {
-		err = opt(&o)
+		err := opt(&o)
 		if err != nil {
-			return nil, nil, nil, 0, err
+			return Result{}, err
 		}
 	}
-	targetImage = RescaleImage(o.target, o.resolution)
-	resultImage = RescaleImage(o.result, o.resolution)
+	targetImage := RescaleImage(o.target, o.resolution)
+	resultImage := RescaleImage(o.result, o.resolution)
 	if o.pins == nil {
 		o.pins = CalculatePins(o.pinCount, targetImage.Bounds(), 1)
 	}
@@ -32,8 +32,9 @@ func Generate(target image.Image, options ...Option) (resultImage, targetImage *
 
 	scoreFunction := Score
 
-	instructions = make([]int, 1, o.nLines+1)
+	instructions := make([]int, 1, o.nLines+1)
 	currentPin := 0
+	length := 0.0
 	for range o.nLines {
 		bestPoints, bestPin := getBestLineParallel(scoreFunction, currentPin, o, targetImage, resultImage)
 
@@ -46,7 +47,17 @@ func Generate(target image.Image, options ...Option) (resultImage, targetImage *
 
 		currentPin = bestPin
 	}
-	return resultImage, targetImage, instructions, length, nil
+	result := Result{
+		StartImage:   targetImage,
+		EndImage:     resultImage,
+		Instructions: instructions,
+		StringLength: length,
+		Pins:         o.pins,
+	}
+	if !o.noPreview {
+		result.Image = Preview(o.pins, instructions)
+	}
+	return result, nil
 }
 
 func getBestLine(scoreFunction ScoreFunction, currentPin int, o options, targetImage, resultImage *image.RGBA) (bestPoints []image.Point, bestPin int) {

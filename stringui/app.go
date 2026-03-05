@@ -49,6 +49,7 @@ type StringerApp struct {
 		CompletedLines      int
 		TargetImages        []*image.RGBA
 		ResultImages        []*image.RGBA
+		PreviewImages       []*image.RGBA
 		Instructions        []int
 		Lengths             []float64
 		SelectedId          int
@@ -77,8 +78,8 @@ func (s *StringerApp) setupContent() {
 		s.Widgets.Lines.value.Set(f)
 	}
 	s.Widgets.Darkness = NewSliderWithLabel("String Darkness", "%.0f", 1, 255, 1, 50)
-	s.Widgets.Erase = NewSliderWithLabel("Erase Ratio", "%3.2f", 0, 2, 0.05, 0)
-	s.Widgets.Resolution = NewSliderWithLabel("Image Resolution", "%.0f", 100, 1000, 10, 500)
+	s.Widgets.Erase = NewSliderWithLabel("Erase Ratio", "%3.2f", 0, 2, 0.05, 0.2)
+	s.Widgets.Resolution = NewSliderWithLabel("Image Resolution", "%.0f", 100, 1000, 10, 300)
 	s.Widgets.Pins = NewSliderWithLabel("Number of Pins", "%.0f", 10, 600, 10, 160)
 	entry := widget.NewEntry()
 	entry.Validator = func(s string) error {
@@ -196,6 +197,8 @@ func (s *StringerApp) openFileCallback(reader fyne.URIReadCloser, err error) {
 	s.State.TargetImages[0] = target
 	s.State.ResultImages = make([]*image.RGBA, 1, s.LinesVariants())
 	s.State.ResultImages[0] = empty
+	s.State.PreviewImages = make([]*image.RGBA, 1, s.LinesVariants())
+	s.State.PreviewImages[0] = empty
 
 	s.setImages(0)
 
@@ -204,7 +207,7 @@ func (s *StringerApp) openFileCallback(reader fyne.URIReadCloser, err error) {
 
 func (s *StringerApp) saveFileCallback(writer fyne.URIWriteCloser, err error) {
 	if s.State.Calculating {
-		d := dialog.NewInformation("Calculation", "The Calculation mus be completed before saving", s.Window)
+		d := dialog.NewInformation("Calculation", "The Calculation must be completed before saving", s.Window)
 		d.Show()
 		return
 	}
@@ -221,19 +224,20 @@ func (s *StringerApp) saveFileCallback(writer fyne.URIWriteCloser, err error) {
 		panic(err)
 	}
 
-	instructions := s.State.Instructions[:int(s.Widgets.Lines.Value)+1]
+	selectedId := int(s.Widgets.Lines.Value) + 1
+	instructions := s.State.Instructions[:selectedId]
 	length := 0.0
 	for _, l := range s.State.Lengths[:s.State.SelectedId] {
 		length += l
 	}
-	resultImage := s.Widgets.RightImage.Image
+	prewieImage := s.State.PreviewImages[selectedId]
 
 	err = stringer.WriteInstructionsToDisk(filepath+"_instructions.txt", instructions, length)
 	if err != nil {
 		panic(err)
 	}
 
-	err = stringer.SaveImageToDisk(filepath+"_stringer.png", resultImage)
+	err = stringer.SaveImageToDisk(filepath+"_stringer.png", prewieImage)
 	if err != nil {
 		panic(err)
 	}
@@ -257,7 +261,7 @@ func (s *StringerApp) setImages(i int) {
 	if i > len(s.State.ResultImages) {
 		panic("result image not yet calculated")
 	}
-	s.Widgets.RightImage.Image = s.State.ResultImages[i]
+	s.Widgets.RightImage.Image = s.State.PreviewImages[i]
 	fyne.Do(func() { s.Widgets.RightImage.Refresh() })
 }
 
@@ -271,6 +275,7 @@ func (s *StringerApp) Recalculate() {
 
 	s.State.TargetImages = s.State.TargetImages[:1]
 	s.State.ResultImages = s.State.ResultImages[:1]
+	s.State.PreviewImages = s.State.PreviewImages[:1]
 	s.State.Instructions = s.State.Instructions[:0]
 	s.State.Lengths = s.State.Lengths[:0]
 
@@ -291,7 +296,7 @@ func (s *StringerApp) Recalculate() {
 				return
 			default:
 				nextLines := min(currentLines+s.Widgets.Lines.Step, s.Widgets.Lines.Max)
-				result, target, instructions, length, err := stringer.Generate(
+				result, err := stringer.Generate(
 					s.State.TargetImages[i],
 					stringer.WithResultImage(s.State.ResultImages[i]),
 					stringer.WithLinesCount(int(nextLines-currentLines)),
@@ -300,15 +305,17 @@ func (s *StringerApp) Recalculate() {
 					stringer.WithEraseFactor(erase),
 					stringer.WithResolution(resolution),
 					stringer.WithDiameter(s.State.ImageDiameterMM/1000),
+					stringer.WithoutPreview(),
 				)
 				if err != nil {
 					panic(err)
 				}
 
-				s.State.TargetImages = append(s.State.TargetImages, target)
-				s.State.ResultImages = append(s.State.ResultImages, result)
-				s.State.Instructions = append(s.State.Instructions, instructions...)
-				s.State.Lengths = append(s.State.Lengths, length)
+				s.State.TargetImages = append(s.State.TargetImages, result.StartImage)
+				s.State.ResultImages = append(s.State.ResultImages, result.EndImage)
+				s.State.Instructions = append(s.State.Instructions, result.Instructions...)
+				s.State.PreviewImages = append(s.State.PreviewImages, stringer.PreviewOver(result.Pins, result.Instructions, s.State.PreviewImages[len(s.State.PreviewImages)-1]))
+				s.State.Lengths = append(s.State.Lengths, result.StringLength)
 
 				if set := s.Widgets.Lines.Value; set > currentLines && set <= nextLines {
 					s.setImages(i + 1)

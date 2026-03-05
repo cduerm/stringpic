@@ -43,7 +43,7 @@ func main() {
 
 	eraseColor := uint8(float64(stringDarkness) * eraseFactor)
 	fmt.Println(eraseColor)
-	resultImage, _, instructions, length, err := stringer.Generate(target,
+	result, err := stringer.Generate(target,
 		stringer.WithPinCount(pinCount),
 		stringer.WithDiameter(diameterMM/1000),
 		stringer.WithLinesCount(nLines),
@@ -57,17 +57,17 @@ func main() {
 	}
 
 	outFilenameBase, _ := strings.CutSuffix(path.Base(filename), path.Ext(filename))
-	err = stringer.WriteInstructionsToDisk(path.Join(outDir, outFilenameBase+"_instructions.txt"), instructions, length)
+	err = stringer.WriteInstructionsToDisk(path.Join(outDir, outFilenameBase+"_instructions.txt"), result.Instructions, result.StringLength)
 	if err != nil {
 		panic(err)
 	}
 
-	err = stringer.SaveImageToDisk(path.Join(outDir, outFilenameBase+"_stringer.png"), resultImage)
+	err = stringer.SaveImageToDisk(path.Join(outDir, outFilenameBase+"_stringer.png"), result.Image)
 	if err != nil {
 		panic(err)
 	}
 
-	err = htmlViewer.WriteInstructions(path.Join(outDir, outFilenameBase+"_instructions.html"), instructions)
+	err = htmlViewer.WriteInstructions(path.Join(outDir, outFilenameBase+"_instructions.html"), result.Instructions)
 	if err != nil {
 		panic(err)
 	}
