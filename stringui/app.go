@@ -230,14 +230,14 @@ func (s *StringerApp) saveFileCallback(writer fyne.URIWriteCloser, err error) {
 	for _, l := range s.State.Lengths[:s.State.SelectedId] {
 		length += l
 	}
-	prewieImage := s.State.PreviewImages[selectedId]
+	previewImage := s.State.PreviewImages[selectedId]
 
 	err = stringer.WriteInstructionsToDisk(filepath+"_instructions.txt", instructions, length)
 	if err != nil {
 		panic(err)
 	}
 
-	err = stringer.SaveImageToDisk(filepath+"_stringer.png", prewieImage)
+	err = stringer.SaveImageToDisk(filepath+"_stringer.png", previewImage)
 	if err != nil {
 		panic(err)
 	}

@@ -49,9 +49,9 @@ func PreviewOver(pins []Pin, instructions []int, under *image.RGBA) *image.RGBA 
 	for i := range instructions[1:] {
 		end := randomOffset(instructions[i+1], pins, 0.2)
 		dc.DrawLine(start.X, start.Y, end.X, end.Y)
-		dc.Stroke()
 		start = end
 	}
+	dc.Stroke()
 	return dc.Image().(*image.RGBA)
 }
 
