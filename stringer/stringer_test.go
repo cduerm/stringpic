@@ -4,8 +4,11 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"math"
 	"math/rand"
 	"testing"
+
+	"github.com/fogleman/gg"
 )
 
 func BenchmarkLinePoins(b *testing.B) {
@@ -191,4 +194,42 @@ func TestFindBestLineParallel(t *testing.T) {
 		t.Logf("want: %v, got: %v", want, got)
 		t.Fail()
 	}
+}
+
+func BenchmarkPreview(b *testing.B) {
+	dc := gg.NewContext(PreviewSettings.Size, PreviewSettings.Size)
+	pins := CalculatePins(160, dc.Image().Bounds(), 2)
+
+	var xl, xu, yl, yu float64 = math.MaxFloat64, -math.MaxFloat64, math.MaxFloat64, -math.MaxFloat64
+	for _, p := range pins {
+		xl = min(xl, p.X)
+		xu = max(xu, p.X)
+		yl = min(yl, p.Y)
+		yu = max(yu, p.Y)
+	}
+	delta := max(xu-xl, yu-yl) + 2*min(xl, yl)
+
+	dc.SetColor(color.White)
+	dc.Clear()
+	dc.Scale(float64(PreviewSettings.Size)/delta, float64(PreviewSettings.Size)/delta)
+	dc.SetColor(PreviewSettings.LineColor)
+	dc.SetLineWidth(PreviewSettings.LineWidth)
+	dc.SetLineCapRound()
+
+	instructions := make([]int, 6000)
+	for i := range instructions {
+		instructions[i] = rand.Intn(len(pins))
+	}
+	b.ResetTimer()
+	start := randomOffset(instructions[0], pins)
+	dc.MoveTo(start.X, start.Y)
+	for i := range b.N {
+		end := randomOffset(instructions[(i+1)%len(instructions)], pins)
+		// dc.DrawLine(start.X, start.Y, end.X, end.Y)
+		dc.MoveTo(start.X, start.Y)
+		dc.LineTo(end.X, end.Y)
+		dc.Stroke()
+		start = end
+	}
+	b.StopTimer()
 }

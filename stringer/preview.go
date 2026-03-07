@@ -18,8 +18,8 @@ type previewSettings struct {
 }
 
 var PreviewSettings = previewSettings{
-	Size:      2000,
-	LineWidth: 2.8,
+	Size:      1000,
+	LineWidth: 1.4,
 	LineColor: color.NRGBA{0, 0, 0, 80},
 	Offset:    0.2,
 }
@@ -45,15 +45,15 @@ func PreviewOver(pins []Pin, instructions []int, under *image.RGBA) *image.RGBA 
 	dc.DrawImage(under, 0, 0)
 	dc.Scale(float64(PreviewSettings.Size)/delta, float64(PreviewSettings.Size)/delta)
 	dc.SetColor(PreviewSettings.LineColor)
-	dc.SetLineCapRound()
 	dc.SetLineWidth(PreviewSettings.LineWidth)
+	dc.SetLineCapRound()
 	start := randomOffset(instructions[0], pins)
 	for i := range instructions[1:] {
 		end := randomOffset(instructions[i+1], pins)
 		dc.DrawLine(start.X, start.Y, end.X, end.Y)
+		dc.Stroke()
 		start = end
 	}
-	dc.Stroke()
 	return dc.Image().(*image.RGBA)
 }
 

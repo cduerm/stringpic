@@ -106,6 +106,7 @@ func (s *StringerApp) setupContent() {
 		theme.FolderOpenIcon(),
 		func() {
 			s.FileOpenDialog.Show()
+			s.FileOpenDialog.Resize(s.Window.Content().Size())
 		},
 	)
 	s.Widgets.SaveButton = widget.NewButtonWithIcon(
