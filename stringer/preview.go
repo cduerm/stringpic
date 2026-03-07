@@ -14,12 +14,14 @@ type previewSettings struct {
 	LineWidth float64
 	LineColor color.Color
 	Padding   float64
+	Offset    float64
 }
 
 var PreviewSettings = previewSettings{
 	Size:      2000,
 	LineWidth: 2.8,
 	LineColor: color.NRGBA{0, 0, 0, 80},
+	Offset:    0.2,
 }
 
 func Preview(pins []Pin, instructions []int) *image.RGBA {
@@ -45,9 +47,9 @@ func PreviewOver(pins []Pin, instructions []int, under *image.RGBA) *image.RGBA 
 	dc.SetColor(PreviewSettings.LineColor)
 	dc.SetLineCapRound()
 	dc.SetLineWidth(PreviewSettings.LineWidth)
-	start := randomOffset(instructions[0], pins, 0.2)
+	start := randomOffset(instructions[0], pins)
 	for i := range instructions[1:] {
-		end := randomOffset(instructions[i+1], pins, 0.2)
+		end := randomOffset(instructions[i+1], pins)
 		dc.DrawLine(start.X, start.Y, end.X, end.Y)
 		start = end
 	}
@@ -55,8 +57,9 @@ func PreviewOver(pins []Pin, instructions []int, under *image.RGBA) *image.RGBA 
 	return dc.Image().(*image.RGBA)
 }
 
-func randomOffset(pinId int, pins []Pin, fac float64) Pin {
+func randomOffset(pinId int, pins []Pin) Pin {
 	offset := rand.Float64()*2 - 1
+	fac := PreviewSettings.Offset
 	var dx, dy float64
 	if offset > 0 {
 		dx = fac * offset * (pins[(pinId+1)%len(pins)].X - pins[pinId].X)
