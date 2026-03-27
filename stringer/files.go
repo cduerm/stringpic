@@ -7,6 +7,7 @@ import (
 	"image/draw"
 	"image/png"
 	"os"
+	"strings"
 
 	_ "image/jpeg"
 )
@@ -41,6 +42,17 @@ func SaveImageToDisk(filename string, img image.Image) error {
 		return err
 	}
 	return nil
+}
+
+func InstructionsText(instructions []int, length float64) string {
+	text := new(strings.Builder)
+
+	fmt.Fprintf(text, "Start at pin #0 at the top and count in clockwise direction\nYou will need around %.1f m of string\n", length)
+	for i, pin := range instructions[1:] {
+		fmt.Fprintf(text, "step %d: Go to pin #%d\n", i+1, pin)
+	}
+	fmt.Fprintf(text, "Your're done. Congratulations!\n")
+	return text.String()
 }
 
 // WriteInstructionsToDisk writes the instructions (a list of pin IDs) to a text file, including the length
