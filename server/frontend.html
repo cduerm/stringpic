@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processor App</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 40px auto; line-height: 1.6; }
+        .card { border: 1px solid #ccc; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        button { padding: 8px 16px; cursor: pointer; }
+        button:disabled { cursor: not-allowed; opacity: 0.5; }
+        #resultImage { max-width: 100%; margin-top: 10px; border: 1px dashed #999; display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>Image Processor</h1>
+
+    <div class="card">
+        <h2>1. Upload Image</h2>
+        <input type="file" id="imageInput" accept="image/*">
+        <br><br>
+        <button id="uploadBtn" onclick="uploadImage()">Start Job</button>
+    </div>
+
+    <div class="card">
+        <h2>2. Job Status</h2>
+        <p><strong>Job ID:</strong> <span id="jobIdDisplay">None</span></p>
+        <p><strong>Status:</strong> <span id="statusDisplay">Waiting for upload...</span></p>
+    </div>
+
+    <div class="card">
+        <h2>3. Result</h2>
+        <p id="resultText"></p>
+        <img id="resultImage" alt="Processed Result">
+    </div>
+
+    <script>
+        let currentJobId = null;
+        let statusInterval = null;
+
+        async function uploadImage() {
+            const fileInput = document.getElementById('imageInput');
+            if (fileInput.files.length === 0) {
+                alert("Please select an image first.");
+                return;
+            }
+
+            // Construct the multipart/form-data payload
+            const formData = new FormData();
+            formData.append("image", fileInput.files[0]);
+            formData.append("threshold", "0.8"); // Example of sending params
+
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('statusDisplay').innerText = "Uploading...";
+
+            try {
+                const response = await fetch('/api/jobs', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error("Upload failed");
+
+                const data = await response.json();
+                
+                // Save the ID and update UI
+                currentJobId = data.id;
+                document.getElementById('jobIdDisplay').innerText = currentJobId;
+                document.getElementById('statusDisplay').innerText = data.status;
+                
+                // Start polling every second
+                statusInterval = setInterval(checkStatus, 1000);
+                document.getElementById('uploadBtn').disabled = false;
+
+            } catch (error) {
+                alert(error.message);
+                document.getElementById('uploadBtn').disabled = false;
+            }
+        }
+
+        async function checkStatus() {
+            if (!currentJobId) return;
+
+            try {
+                const response = await fetch(`/api/jobs/${currentJobId}`);
+                if (!response.ok) throw new Error("Status check failed");
+
+                const data = await response.json();
+                document.getElementById('statusDisplay').innerText = data.status;
+
+                // Stop polling if the job is done or has failed
+                if (data.status === "completed" || data.status === "failed") {
+                    clearInterval(statusInterval);
+
+                    if (data.status === "completed") {
+                        document.getElementById('resultText').innerText = data.text_data;
+                        
+                        const imgElement = document.getElementById('resultImage');
+                        // We can just set the src directly to the image endpoint!
+                        imgElement.src = `/api/jobs/${currentJobId}/image`;
+                        imgElement.style.display = "block";
+                    }
+                }
+
+            } catch (error) {
+                clearInterval(statusInterval);
+                alert(error.message);
+            }
+        }
+    </script>
+</body>
+</html>
