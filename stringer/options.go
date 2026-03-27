@@ -4,6 +4,7 @@ import (
 	"errors"
 	"image"
 	"image/color"
+	"log"
 )
 
 type options struct {
@@ -22,9 +23,9 @@ var defaultOptions = options{
 	nLines:         3000,
 	paintColor:     color.RGBA{0, 0, 0, 30},
 	eraseColor:     color.RGBA{30, 30, 30, 30},
-	circleDiameter: 1.0,
-	pinCount:       240,
-	resolution:     500,
+	circleDiameter: 0.22,
+	pinCount:       160,
+	resolution:     400,
 	noPreview:      false,
 }
 
@@ -129,10 +130,26 @@ func WithEraseFactor(f float64) Option {
 	}
 	return func(o *options) error {
 		_, _, _, a := o.paintColor.RGBA()
-		factor := f / 257
+		factor := max(0, min(1, f)) / 257
 		value := uint8(min(255, float64(a)*factor))
 
 		o.eraseColor = color.RGBA{value, value, value, value}
+		log.Println(o.eraseColor)
+		return nil
+	}
+}
+
+// WithEraseFactor allows to paint out a ceratin fraction of the painted line. Can be useful to control
+// contrast in the final result. It always uses white to paint out the lines. Otherwise use WithEraseColor.
+func WithEraseValue(f float64) Option {
+	if f < 0 || f > 255 {
+		return errorOption("factor must be between 0 and 255 (inclusive)")
+	}
+	return func(o *options) error {
+		value := uint8(f)
+
+		o.eraseColor = color.RGBA{value, value, value, value}
+		log.Println(o.eraseColor)
 		return nil
 	}
 }

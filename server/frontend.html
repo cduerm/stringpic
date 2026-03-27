@@ -20,6 +20,15 @@
         <h2>1. Upload Image</h2>
         <input type="file" id="imageInput" accept="image/*">
         <br><br>
+        <label for="lineCount">Line Count:</label>
+        <input type="number" id="lineCount" value="2000">
+        <br><br>
+        <label for="pinCount">Pin Count:</label>
+        <input type="number" id="pinCount" value="160">
+        <br><br>
+        <label for="eraseValue">Erase Value:</label>
+        <input type="number" step="1" id="eraseValue" value="30">
+        <br><br>
         <button id="uploadBtn" onclick="uploadImage()">Start Job</button>
     </div>
 
@@ -49,7 +58,9 @@
             // Construct the multipart/form-data payload
             const formData = new FormData();
             formData.append("image", fileInput.files[0]);
-            formData.append("threshold", "0.8"); // Example of sending params
+            formData.append("lineCount", document.getElementById('lineCount').value);
+            formData.append("pinCount", document.getElementById('pinCount').value);
+            formData.append("eraseValue", document.getElementById('eraseValue').value);
 
             document.getElementById('uploadBtn').disabled = true;
             document.getElementById('statusDisplay').innerText = "Uploading...";

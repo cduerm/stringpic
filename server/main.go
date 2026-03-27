@@ -8,6 +8,7 @@ import (
 	"image"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 
 	_ "image/jpeg"
@@ -23,6 +24,9 @@ type Job struct {
 	TextData    string      `json:"text_data,omitempty"`
 	Image       []byte      `json:"-"` // Unexported from JSON so we don't dump raw bytes
 	TargetImage image.Image `json:"-"` // Unexported from JSON so we don't dump raw bytes
+	LineCount   int         `json:"-"`
+	PinCount    int         `json:"-"`
+	EraseValue  float64     `json:"-"`
 }
 
 // JobStore handles our in-memory state safely across multiple goroutines
@@ -93,12 +97,19 @@ func handleCreateJob(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	lineCount, _ := strconv.Atoi(r.FormValue("lineCount"))
+	pinCount, _ := strconv.Atoi(r.FormValue("pinCount"))
+	eraseValue, _ := strconv.ParseFloat(r.FormValue("eraseValue"), 64)
+
 	// 2. Create a new job
 	jobID := generateID()
 	job := &Job{
 		ID:          jobID,
 		Status:      "processing",
 		TargetImage: img,
+		LineCount:   lineCount,
+		PinCount:    pinCount,
+		EraseValue:  eraseValue,
 	}
 
 	// 3. Save to in-memory store
@@ -156,7 +167,18 @@ func processImage(jobID string) {
 		return
 	}
 
-	result, err := stringer.Generate(job.TargetImage)
+	var opts []stringer.Option
+	if job.LineCount > 0 {
+		opts = append(opts, stringer.WithLinesCount(job.LineCount))
+	}
+	if job.PinCount > 0 {
+		opts = append(opts, stringer.WithPinCount(job.PinCount))
+	}
+	if job.EraseValue >= 0 {
+		opts = append(opts, stringer.WithEraseValue(job.EraseValue))
+	}
+
+	result, err := stringer.Generate(job.TargetImage, opts...)
 	if err != nil {
 		job.Status = "failed"
 		job.TextData = err.Error()
@@ -169,7 +191,7 @@ func processImage(jobID string) {
 	defer store.Unlock()
 	instructions := stringer.InstructionsText(result.Instructions[:10], result.StringLength)
 	imageBytes := new(bytes.Buffer)
-	png.Encode(imageBytes, result.EndImage)
+	png.Encode(imageBytes, result.Image)
 
 	if job, exists := store.jobs[jobID]; exists {
 		job.Status = "completed"
