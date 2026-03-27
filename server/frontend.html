@@ -21,13 +21,15 @@
         <input type="file" id="imageInput" accept="image/*">
         <br><br>
         <label for="lineCount">Line Count:</label>
-        <input type="number" id="lineCount" value="2000">
+        <input type="range" id="lineCount" min="100" max="6000" step="100" value="2000" oninput="this.nextElementSibling.value = this.value">
+        <output>2000</output>
+        <br><br>
+        <label for="eraseValue">Erase Value:</label>
+        <input type="range" id="eraseValue" min="0" max="255" step="1" value="30" oninput="this.nextElementSibling.value = this.value">
+        <output>30</output>
         <br><br>
         <label for="pinCount">Pin Count:</label>
         <input type="number" id="pinCount" value="160">
-        <br><br>
-        <label for="eraseValue">Erase Value:</label>
-        <input type="number" step="1" id="eraseValue" value="30">
         <br><br>
         <button id="uploadBtn" onclick="uploadImage()">Start Job</button>
     </div>
