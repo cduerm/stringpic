@@ -10,11 +10,16 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	_ "image/jpeg"
 	"image/png"
 
 	"github.com/cduerm/stringpic/stringer"
+)
+
+const (
+	keepJobs time.Duration = 10 * time.Second
 )
 
 // Job represents the state of an image processing task
@@ -53,7 +58,8 @@ func main() {
 
 	// It tells Go to serve the index.html file at the root route.
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "frontend.html")
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write(frontendHTML)
 	})
 
 	// Note: The "METHOD /path" syntax requires Go 1.22 or higher.
@@ -161,7 +167,10 @@ func handleGetJobImage(w http.ResponseWriter, r *http.Request) {
 
 // processImage simulates your long-running application logic
 func processImage(jobID string) {
+	store.RLock()
 	job, exists := store.jobs[jobID]
+	store.RUnlock()
+
 	if !exists {
 		log.Printf("Job %s not found", jobID)
 		return
@@ -184,18 +193,25 @@ func processImage(jobID string) {
 		job.TextData = err.Error()
 		return
 	}
-	log.Printf("Job %s completed", jobID)
+	log.Printf("Job %s completed. Deleting in %v...", jobID, keepJobs)
 
 	// Update the job with the results
-	store.Lock()
-	defer store.Unlock()
-	instructions := stringer.InstructionsText(result.Instructions[:10], result.StringLength)
 	imageBytes := new(bytes.Buffer)
 	png.Encode(imageBytes, result.Image)
+	instructions := stringer.InstructionsText(result.Instructions[:10], result.StringLength)
 
+	store.Lock()
 	if job, exists := store.jobs[jobID]; exists {
 		job.Status = "completed"
 		job.TextData = instructions
 		job.Image = imageBytes.Bytes()
 	}
+	store.Unlock()
+
+	time.Sleep(keepJobs)
+
+	store.Lock()
+	delete(store.jobs, jobID)
+	store.Unlock()
+	log.Printf("Job %s deleted", jobID)
 }

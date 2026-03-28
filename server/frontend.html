@@ -49,6 +49,8 @@
     <script>
         let currentJobId = null;
         let statusInterval = null;
+        // Determine the base path from the URL, stripping any trailing slash
+        const basePath = window.location.pathname.replace(/\/$/, '');
 
         async function uploadImage() {
             const fileInput = document.getElementById('imageInput');
@@ -68,7 +70,7 @@
             document.getElementById('statusDisplay').innerText = "Uploading...";
 
             try {
-                const response = await fetch('/api/jobs', {
+                const response = await fetch(`${basePath}/api/jobs`, {
                     method: 'POST',
                     body: formData
                 });
@@ -96,7 +98,7 @@
             if (!currentJobId) return;
 
             try {
-                const response = await fetch(`/api/jobs/${currentJobId}`);
+                const response = await fetch(`${basePath}/api/jobs/${currentJobId}`);
                 if (!response.ok) throw new Error("Status check failed");
 
                 const data = await response.json();
@@ -111,7 +113,7 @@
                         
                         const imgElement = document.getElementById('resultImage');
                         // We can just set the src directly to the image endpoint!
-                        imgElement.src = `/api/jobs/${currentJobId}/image`;
+                        imgElement.src = `${basePath}/api/jobs/${currentJobId}/image`;
                         imgElement.style.display = "block";
                     }
                 }

@@ -5,3 +5,4 @@ wasm/
 StringPic/
 StringPic.tar.xz
 stringpic
+server/stringpic-server
