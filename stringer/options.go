@@ -149,7 +149,6 @@ func WithEraseValue(f float64) Option {
 		value := uint8(f)
 
 		o.eraseColor = color.RGBA{value, value, value, value}
-		log.Println(o.eraseColor)
 		return nil
 	}
 }
