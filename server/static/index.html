@@ -10,6 +10,15 @@
         button { padding: 8px 16px; cursor: pointer; }
         button:disabled { cursor: not-allowed; opacity: 0.5; }
         #resultImage { max-width: 100%; margin-top: 10px; border: 1px dashed #999; display: none; }
+        .header-title {
+            display: flex;
+            align-items: center; /* Vertically align the image and text */
+            margin-bottom: 20px; /* Add some space below the header */
+        }
+        .header-title img {
+            height: 100px; /* Adjust as needed for your favicon size */
+            margin-right: 15px; /* Space between image and H1 */
+        }
         .loading-dots::after {
             content: "";
             animation: ellipsis 1.5s infinite;
@@ -20,11 +29,18 @@
             50% { content: ".."; }
             75% { content: "..."; }
         }
+        footer {
+            margin-top: 40px;
+            text-align: center;
+        }
     </style>
+    <link rel="icon" type="image/png" href="favicon.png">
 </head>
-<body>
-
-    <h1>Image Processor</h1>
+<body> 
+    <div class="header-title">
+        <img src="favicon.png" alt="Favicon">
+        <h1>Image Processor</h1>
+    </div>
 
     <div class="card">
         <h2>1. Upload Image</h2>
@@ -134,5 +150,9 @@
             }
         }
     </script>
+
+    <footer>
+        <p><a href="/privacy-policy.html">Privacy Policy</a></p>
+    </footer>
 </body>
 </html>
