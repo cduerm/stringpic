@@ -10,6 +10,16 @@
         button { padding: 8px 16px; cursor: pointer; }
         button:disabled { cursor: not-allowed; opacity: 0.5; }
         #resultImage { max-width: 100%; margin-top: 10px; border: 1px dashed #999; display: none; }
+        .loading-dots::after {
+            content: "";
+            animation: ellipsis 1.5s infinite;
+        }
+        @keyframes ellipsis {
+            0% { content: ""; }
+            25% { content: "."; }
+            50% { content: ".."; }
+            75% { content: "..."; }
+        }
     </style>
 </head>
 <body>
@@ -32,16 +42,11 @@
         <input type="number" id="pinCount" value="160">
         <br><br>
         <button id="uploadBtn" onclick="uploadImage()">Start Job</button>
+        <span id="statusDisplay" style="margin-left: 10px; font-weight: bold; display: none;"></span>
     </div>
 
     <div class="card">
-        <h2>2. Job Status</h2>
-        <p><strong>Job ID:</strong> <span id="jobIdDisplay">None</span></p>
-        <p><strong>Status:</strong> <span id="statusDisplay">Waiting for upload...</span></p>
-    </div>
-
-    <div class="card">
-        <h2>3. Result</h2>
+        <h2>2. Result</h2>
         <p id="resultText"></p>
         <img id="resultImage" alt="Processed Result">
     </div>
@@ -67,7 +72,11 @@
             formData.append("eraseValue", document.getElementById('eraseValue').value);
 
             document.getElementById('uploadBtn').disabled = true;
-            document.getElementById('statusDisplay').innerText = "Uploading...";
+            
+            const statusDisplay = document.getElementById('statusDisplay');
+            statusDisplay.style.display = "inline-block";
+            statusDisplay.innerText = "Uploading";
+            statusDisplay.classList.add("loading-dots");
 
             try {
                 const response = await fetch(`${basePath}/api/jobs`, {
@@ -81,8 +90,7 @@
                 
                 // Save the ID and update UI
                 currentJobId = data.id;
-                document.getElementById('jobIdDisplay').innerText = currentJobId;
-                document.getElementById('statusDisplay').innerText = data.status;
+                statusDisplay.innerText = data.status.charAt(0).toUpperCase() + data.status.slice(1);
                 
                 // Start polling every second
                 statusInterval = setInterval(checkStatus, 1000);
@@ -102,11 +110,13 @@
                 if (!response.ok) throw new Error("Status check failed");
 
                 const data = await response.json();
-                document.getElementById('statusDisplay').innerText = data.status;
+                const statusDisplay = document.getElementById('statusDisplay');
+                statusDisplay.innerText = data.status.charAt(0).toUpperCase() + data.status.slice(1);
 
                 // Stop polling if the job is done or has failed
                 if (data.status === "completed" || data.status === "failed") {
                     clearInterval(statusInterval);
+                    statusDisplay.classList.remove("loading-dots");
 
                     if (data.status === "completed") {
                         document.getElementById('resultText').innerText = data.text_data;

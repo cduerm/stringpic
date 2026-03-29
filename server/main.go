@@ -5,7 +5,9 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"image"
+	"io/fs"
 	"log"
 	"net/http"
 	"strconv"
@@ -56,11 +58,12 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// It tells Go to serve the index.html file at the root route.
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write(frontendHTML)
-	})
+	// Serve static files from the embedded filesystem
+	subFS, err := fs.Sub(staticFS, "static")
+	if err != nil {
+		log.Fatal(err)
+	}
+	mux.Handle("/", http.FileServer(http.FS(subFS)))
 
 	// Note: The "METHOD /path" syntax requires Go 1.22 or higher.
 	mux.HandleFunc("POST /api/jobs", handleCreateJob)
@@ -198,7 +201,7 @@ func processImage(jobID string) {
 	// Update the job with the results
 	imageBytes := new(bytes.Buffer)
 	png.Encode(imageBytes, result.Image)
-	instructions := stringer.InstructionsText(result.Instructions[:10], result.StringLength)
+	instructions := fmt.Sprintf("Image requires %.0f meters of string (22 cm diameter frame)", result.StringLength)
 
 	store.Lock()
 	if job, exists := store.jobs[jobID]; exists {

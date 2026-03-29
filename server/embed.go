@@ -1,6 +1,6 @@
 package main
 
-import _ "embed"
+import "embed"
 
-//go:embed frontend.html
-var frontendHTML []byte
+//go:embed static
+var staticFS embed.FS
