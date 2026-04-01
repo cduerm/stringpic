@@ -17,6 +17,8 @@ import (
 	_ "image/jpeg"
 	"image/png"
 
+	_ "golang.org/x/image/webp"
+
 	"github.com/cduerm/stringpic/stringer"
 )
 
