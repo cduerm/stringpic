@@ -180,6 +180,7 @@ func processImage(jobID string) {
 		log.Printf("Job %s not found", jobID)
 		return
 	}
+	startTime := time.Now()
 
 	var opts []stringer.Option
 	if job.LineCount > 0 {
@@ -198,7 +199,7 @@ func processImage(jobID string) {
 		job.TextData = err.Error()
 		return
 	}
-	log.Printf("Job %s completed. Deleting in %v...", jobID, keepJobs)
+	log.Printf("Job %s completed. Took %v. Deleting in %v...", jobID, time.Since(startTime), keepJobs)
 
 	// Update the job with the results
 	imageBytes := new(bytes.Buffer)
