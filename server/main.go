@@ -24,6 +24,13 @@ import (
 
 const (
 	keepJobs time.Duration = 10 * time.Second
+
+	minLineCount  = 100
+	maxLineCount  = 6000
+	minPinCount   = 2
+	maxPinCount   = 1000
+	minEraseValue = 0.0
+	maxEraseValue = 50.0
 )
 
 // Job represents the state of an image processing task
@@ -31,8 +38,8 @@ type Job struct {
 	ID          string      `json:"id"`
 	Status      string      `json:"status"` // "pending", "processing", "completed", "failed"
 	TextData    string      `json:"text_data,omitempty"`
-	Image       []byte      `json:"-"` // Unexported from JSON so we don't dump raw bytes
-	TargetImage image.Image `json:"-"` // Unexported from JSON so we don't dump raw bytes
+	Image       []byte      `json:"-"`
+	TargetImage image.Image `json:"-"`
 	LineCount   int         `json:"-"`
 	PinCount    int         `json:"-"`
 	EraseValue  float64     `json:"-"`
@@ -55,6 +62,7 @@ func generateID() string {
 	return hex.EncodeToString(b)
 }
 
+// main starts the HTTP server and registers the API routes.
 func main() {
 	log.Default().SetFlags(log.Ldate | log.Lmicroseconds)
 
@@ -67,7 +75,6 @@ func main() {
 	}
 	mux.Handle("/", http.FileServer(http.FS(subFS)))
 
-	// Note: The "METHOD /path" syntax requires Go 1.22 or higher.
 	mux.HandleFunc("POST /api/jobs", handleCreateJob)
 	mux.HandleFunc("GET /api/jobs/{id}", handleGetJobStatus)
 	mux.HandleFunc("GET /api/jobs/{id}/image", handleGetJobImage)
@@ -76,10 +83,9 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", mux))
 }
 
+// handleCreateJob parses the uploaded image, creates a new background job, and returns the job ID.
 func handleCreateJob(w http.ResponseWriter, r *http.Request) {
 	log.Println("Received Job")
-	// 1. Parse your multipart form (the uploaded image and parameters) here...
-	// For brevity, we are skipping the parsing logic.
 	err := r.ParseMultipartForm(10 << 20) // 10MB limit
 	if err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
@@ -93,15 +99,6 @@ func handleCreateJob(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	firstBytes := make([]byte, 512)
-	_, err = file.Read(firstBytes)
-	if err != nil {
-		http.Error(w, "Error reading file", http.StatusInternalServerError)
-	}
-	log.Printf("File type: %s\n", http.DetectContentType(firstBytes))
-
-	//create an image.Image from the file
-	file.Seek(0, 0)
 	img, _, err := image.Decode(file)
 	if err != nil {
 		http.Error(w, "Invalid image format", http.StatusBadRequest)
@@ -112,7 +109,10 @@ func handleCreateJob(w http.ResponseWriter, r *http.Request) {
 	pinCount, _ := strconv.Atoi(r.FormValue("pinCount"))
 	eraseValue, _ := strconv.ParseFloat(r.FormValue("eraseValue"), 64)
 
-	// 2. Create a new job
+	lineCount = max(minLineCount, min(maxLineCount, lineCount))
+	pinCount = max(minPinCount, min(maxPinCount, pinCount))
+	eraseValue = max(minEraseValue, min(maxEraseValue, eraseValue))
+
 	jobID := generateID()
 	job := &Job{
 		ID:          jobID,
@@ -123,23 +123,21 @@ func handleCreateJob(w http.ResponseWriter, r *http.Request) {
 		EraseValue:  eraseValue,
 	}
 
-	// 3. Save to in-memory store
 	store.Lock()
 	store.jobs[jobID] = job
 	store.Unlock()
 	log.Printf("Job %s created", jobID)
 
-	// 4. Kick off the heavy processing in a background goroutine!
 	go processImage(jobID)
 
-	// 5. Immediately return the job ID to the user
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusAccepted) // 202 Accepted
+	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(job)
 }
 
+// handleGetJobStatus returns the current status and metadata of a specific job.
 func handleGetJobStatus(w http.ResponseWriter, r *http.Request) {
-	jobID := r.PathValue("id") // Go 1.22 feature
+	jobID := r.PathValue("id")
 
 	store.RLock()
 	job, exists := store.jobs[jobID]
@@ -154,6 +152,7 @@ func handleGetJobStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(job)
 }
 
+// handleGetJobImage serves the resulting image of a completed job.
 func handleGetJobImage(w http.ResponseWriter, r *http.Request) {
 	jobID := r.PathValue("id")
 
@@ -166,11 +165,11 @@ func handleGetJobImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "image/png") // Change depending on your output type
+	w.Header().Set("Content-Type", "image/png")
 	w.Write(job.Image)
 }
 
-// processImage simulates your long-running application logic
+// processImage performs the long-running image generation process in the background.
 func processImage(jobID string) {
 	store.RLock()
 	job, exists := store.jobs[jobID]
@@ -201,7 +200,6 @@ func processImage(jobID string) {
 	}
 	log.Printf("Job %s completed. Took %v. Deleting in %v...", jobID, time.Since(startTime), keepJobs)
 
-	// Update the job with the results
 	imageBytes := new(bytes.Buffer)
 	png.Encode(imageBytes, result.Image)
 	instructions := fmt.Sprintf("Image requires %.0f meters of string (22 cm diameter frame)", result.StringLength)
