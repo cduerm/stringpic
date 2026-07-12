@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"image/color"
+	"os"
 	"path"
 	"strings"
 
@@ -42,7 +44,7 @@ func main() {
 	}
 
 	eraseColor := uint8(float64(stringDarkness) * eraseFactor)
-	fmt.Println(eraseColor)
+	// fmt.Println(eraseColor)
 	result, err := stringer.Generate(target,
 		stringer.WithPinCount(pinCount),
 		stringer.WithDiameter(diameterMM/1000),
@@ -59,6 +61,9 @@ func main() {
 	outFilenameBase, _ := strings.CutSuffix(path.Base(filename), path.Ext(filename))
 	err = stringer.WriteInstructionsToDisk(path.Join(outDir, outFilenameBase+"_instructions.txt"), result.Instructions, result.StringLength)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			fmt.Printf("The output directory '%s' does not exists. Select another with the '-output' flag or create first.\n", outDir)
+		}
 		panic(err)
 	}
 
