@@ -77,6 +77,7 @@ func (s *StringerApp) setupContent() {
 		}
 		s.Widgets.Lines.value.Set(f)
 	}
+	s.State.SelectedId = int((s.Widgets.Lines.Value - s.Widgets.Lines.Min + 1) / s.Widgets.Lines.Step)
 	s.Widgets.Darkness = NewSliderWithLabel("String Darkness", "%.0f", 1, 255, 1, 50)
 	s.Widgets.Erase = NewSliderWithLabel("Erase Ratio", "%3.2f", 0, 2, 0.05, 0.2)
 	s.Widgets.Resolution = NewSliderWithLabel("Image Resolution", "%.0f", 100, 1000, 10, 300)
@@ -231,7 +232,7 @@ func (s *StringerApp) saveFileCallback(writer fyne.URIWriteCloser, err error) {
 	for _, l := range s.State.Lengths[:s.State.SelectedId] {
 		length += l
 	}
-	previewImage := s.State.PreviewImages[selectedId]
+	previewImage := s.State.PreviewImages[s.State.SelectedId]
 
 	err = stringer.WriteInstructionsToDisk(filepath+"_instructions.txt", instructions, length)
 	if err != nil {

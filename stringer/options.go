@@ -4,7 +4,6 @@ import (
 	"errors"
 	"image"
 	"image/color"
-	"log"
 )
 
 type options struct {
@@ -134,7 +133,7 @@ func WithEraseFactor(f float64) Option {
 		value := uint8(min(255, float64(a)*factor))
 
 		o.eraseColor = color.RGBA{value, value, value, value}
-		log.Println(o.eraseColor)
+		//log.Println(o.eraseColor)
 		return nil
 	}
 }
